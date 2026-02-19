@@ -59,7 +59,7 @@ async function userLogin(req,res)
         console.log(user);
 
         if (!isPasswordValid) {
-            return res.status(401).json({ message: 'Hibás email vagy jelszóseededed' });
+            return res.status(401).json({ message: 'Hibás email vagy jelszó' });
         }
         console.log(process.env.JWT_SECRET);
         const token = jwt.sign({id: user.user_id, name: user.fullname}, process.env.JWT_SECRET, { expiresIn: '7d' });
@@ -72,9 +72,71 @@ async function userLogin(req,res)
     }
 }
 
+async function logout(req, res) {
+    return res.json({ message: "Sikeres kijelentkezés" });
+};
+
+async function userDelete(req,res)
+{
+    const {user_id} = req.user.user_id;
+   
+    try {
+        const [result] = await pool.query("DELETE FROM users WHERE `users`.`user_id` = ?", [user_id]);
+        console.log(user_id);
+        if(result.affectedRows === 0){
+            return res.status(404).json({message: 'Felhasználó nem található'});
+        }
+        res.status(200).json({message: 'Felhasználó sikeresen törölve'});
+    } catch (error) {
+         res.status(500).json({message: "Szerver hiba", error: error.message})
+    }
+    
+}
+
+const getUser = async (req, res) => {
+    const {user_id} = req.params;
+    console.log(user_id);
+    try {
+        const [rows] = await pool.query("SELECT * FROM `users` WHERE user_id = ?", [user_id]);
+        if (rows.length === 0) {
+            return res.status(404).json({ message: 'Felhasználó nem található' });
+        }
+       res.status(200).json({rows});
+    }
+    catch (error) {
+        return res.status(500).json({ message: 'Szerver hiba', error: error.message });
+    }
+}
+
+const updateUser = async (req, res) => {
+    const { user_id } = req.params;
+    const { email, psw, fullname } = req.body;
+
+    if (!user_id) {
+        return res.status(400).json({ message: 'Nincs ilyen felhasználó' });
+    }
+
+    try {
+        const [result] = await pool.query(
+            "UPDATE `users` SET `email` = ?, `psw` = ?, `fullname` = ? WHERE `user_id` = ?",
+            [email, psw, fullname, user_id]
+        );
+       
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: 'Felhasználó nem található' });
+        }
+
+        res.status(200).json({ message: 'Sikeres változtatás' });
+    } catch (error) {
+        res.status(500).json({ message: "Szerverhiba", error: error.message });
+    }
+};
 
 
-export {userRegister,userLogin}
+
+
+export {userRegister,userLogin,logout,userDelete,getUser,updateUser}
 
 
 
