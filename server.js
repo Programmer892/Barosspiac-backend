@@ -12,6 +12,8 @@ const HOST = process.env.DB_HOST
 const app = express()
 app.use(express.json())
 
+app.use(cors())
+
 
 app.use("/api/user",userRoute)
 
@@ -24,7 +26,6 @@ app.use((req,res) =>
 
 
 
-app.use(cors())
 
 app.listen(PORT,HOST,() => {
     console.log(`A szerver fut: http://localhost:${PORT}`);

@@ -17,14 +17,14 @@ async function userRegister(req,res)
 
    if (!email.endsWith('@dszcbaross.edu.hu')) 
     { 
-        return res.status(400).json({ message: 'Csak dszcbaross.edu.hu végződésű email címmel lehet belépni' });
+        return res.status(400).json({ message: 'Csak dszcbaross.edu.hu végződésű email címmel lehet belépni', errorField: 'email' });
     }
 
    try {
     const [existinguser] = await pool.query("SELECT * FROM `users` WHERE email = ?",[email])
 
     if (existinguser.length > 0 ) {
-        return await res.status(400).json({error: "Ez az email cím már foglalt"})
+        return await res.status(400).json({error: "Ez az email cím már foglalt", errorField: 'email'})
     }
 
     const hashedpsw = await bcrypt.hash(psw,10)
@@ -49,7 +49,7 @@ async function userLogin(req,res)
     try {
         const [rows] = await pool.query("SELECT user_id,psw FROM users WHERE email = ?", [email]);
         if (rows.length === 0) {
-            return res.status(401).json({ message: 'Hibás email cím vagy jelszó' });
+            return res.status(400).json({ message: 'Hibás email cím vagy jelszó', errorField: ['email', 'psw'] });
         }
 
         const user = rows[0];
@@ -59,7 +59,7 @@ async function userLogin(req,res)
         console.log(user);
 
         if (!isPasswordValid) {
-            return res.status(401).json({ message: 'Hibás email vagy jelszó' });
+            return res.status(400).json({ message: 'Hibás email vagy jelszó', errorField: ['email', 'psw'] });
         }
         console.log(process.env.JWT_SECRET);
         const token = jwt.sign({id: user.user_id, name: user.fullname}, process.env.JWT_SECRET, { expiresIn: '7d' });
