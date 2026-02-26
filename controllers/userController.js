@@ -29,7 +29,7 @@ async function userRegister(req,res)
 
     const hashedpsw = await bcrypt.hash(psw,10)
 
-    const [result] = await pool.query('INSERT INTO `users` (`user_id`, `pfp`, `email`, `psw`, `fullname`, `class`, `balance`, `role`) VALUES (NULL, "", ?, ?, ?, ?, 0, "regisztralt")',[email,hashedpsw,fullname,userClass])
+    await pool.query("INSERT INTO `users` (`user_id`, `pfp`, `email`, `psw`, `fullname`, `userClass`, `role`, `verified`, `created_at`) VALUES (NULL,NULL, ?, ?, ?, ?, 'regisztralt', '0', current_timestamp())",[email,hashedpsw,fullname,userClass])
     return res.status(200).json({message: "Sikeres regisztráció"}) 
    } catch (error) {
     console.log(error);
@@ -63,7 +63,7 @@ async function userLogin(req,res)
         }
         console.log(process.env.JWT_SECRET);
         const token = jwt.sign({id: user.user_id, name: user.fullname}, process.env.JWT_SECRET, { expiresIn: '7d' });
-        res.status(200).json({ message: 'Sikeres bejelentkezés', token });
+        res.status(200).json({ message: 'Sikeres bejelentkezés', token,user });
         
     }
     catch (error) {
@@ -73,6 +73,7 @@ async function userLogin(req,res)
 }
 
 async function logout(req, res) {
+
     return res.json({ message: "Sikeres kijelentkezés" });
 };
 
@@ -94,22 +95,23 @@ async function userDelete(req,res)
 }
 
 const getUser = async (req, res) => {
-    const {user_id} = req.params;
+    const user_id = req.user.user_id
     console.log(user_id);
     try {
         const [rows] = await pool.query("SELECT * FROM `users` WHERE user_id = ?", [user_id]);
         if (rows.length === 0) {
             return res.status(404).json({ message: 'Felhasználó nem található' });
         }
-       res.status(200).json({rows});
+       res.status(200).json(rows[0]);
     }
     catch (error) {
         return res.status(500).json({ message: 'Szerver hiba', error: error.message });
     }
 }
 
+
 const updateUser = async (req, res) => {
-    const { user_id } = req.params;
+    const { user_id } = req.users.user_id;
     const { email, psw, fullname } = req.body;
 
     if (!user_id) {
