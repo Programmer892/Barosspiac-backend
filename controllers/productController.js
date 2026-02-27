@@ -40,7 +40,8 @@ const getProduct2 = async (req, res) => {
 async function postProduct(req,res) 
 {
 
-   const user_id =  req.users.user_id;
+    const user_id = req.user.user_id;
+    console.log(user_id);
 
 
    const {product_title,product_desc,product_price,product_condition,product_collpoint,product_size,product_subject,product_class,category_id,sub_category_id,sub_subcategory_id,is_sold} = req.body
@@ -48,7 +49,7 @@ async function postProduct(req,res)
    try {
     
 
-    const res = await pool.query("INSERT INTO `product` (`product_id`, `user_id`, `product_title`, `product_desc`, `product_price`, `product_condition`, `product_collpoint`, `product_size`, `product_subject`, `product_class`, `category_id`, `sub_category_id`, `sub_sub_category_id`, `is_sold`, `product_upload`) VALUES (NULL, '', '', '', '', '', '', NULL, NULL, NULL, '', '', '', '0', current_timestamp())",[user_id,product_title,product_desc,product_price,product_condition,product_collpoint,product_size,product_subject,product_class,category_id,sub_category_id,sub_subcategory_id,is_sold])
+    const res = await pool.query("INSERT INTO `product` (`product_id`, `user_id`, `product_title`, `product_desc`, `product_price`, `product_condition`, `product_collpoint`, `product_size`, `product_subject`, `product_class`, `category_id`, `sub_category_id`, `sub_sub_category_id`, `is_sold`, `product_upload`) VALUES (NULL, ?, '', '', '', '', '', NULL, NULL, NULL, '', '', '', '0', current_timestamp())",[user_id,product_title,product_desc,product_price,product_condition,product_collpoint,product_size,product_subject,product_class,category_id,sub_category_id,sub_subcategory_id,is_sold])
     console.log(res);
     return res.status(200).json({message: "Sikeres feltöltés!"})  
   
@@ -78,18 +79,18 @@ async function deleteProduct(req,res)
 
 
 const updateProduct = async (req, res) => {
-    const {product_id} = req.product.product_id;
-    const { user_id } = req.user.user_id;
-    const {product_price, product_upload, product_desc, product_collpoint, product_title, category_id, product_condition, product_size, product_subject, product_class} = req.body;
+   
+  
+     
+    
+    const {product_id,product_title,product_desc,product_price,product_condition,product_collpoint,product_size,product_subject,product_class,category_id,sub_category_id} = req.body;
 
-    if (!user_id) {
-        return res.status(400).json({ message: 'Nincs ilyen felhasználó' });
-    }
+    console.log(product_id);
 
     try {
         const [result] = await pool.query(
-            "UPDATE `product` SET `product_desc` = '', `product_collpoint` = '', `product_title` = '', `product_condition` = '', `product_size` = '', `product_subject` = '', `product_class` = '' WHERE `product`.`product_id` = ?",
-            [product_id,product_price, product_desc, product_collpoint, product_title, category_id, product_condition, product_size, product_subject, product_class]
+            "UPDATE `product` SET `product_title` = '', `product_desc` = '', `product_price` = '', `product_condition` = '', `product_collpoint` = '', `product_size` = '', `product_subject` = '', `product_class` = '', `category_id` = '', `sub_category_id` = '', `is_sold` = '' WHERE `product`.`product_id` = ?",
+            [product_title,product_desc,product_price,product_condition,product_collpoint,product_size,product_subject,product_class,category_id,sub_category_id,product_id]
         );
        
 

@@ -9,7 +9,7 @@ router.get("/latestProduct",getProduct)
 router.get("/getProduct",getProduct2)
 router.post("/postProduct",postProduct)
 router.delete("/:product_id",auth,deleteProduct)
-router.post("/updateProduct",auth,updateProduct)
+router.post("/:product_id",updateProduct)
 
 
 

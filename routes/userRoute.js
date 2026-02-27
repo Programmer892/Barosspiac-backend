@@ -6,9 +6,9 @@ import auth from "../middleware/authMiddleware.js"
 const router = express.Router()
 router.post("/register",userRegister)
 router.post("/login",userLogin)
+router.post("/logout",auth,logout)
 router.get("/me",auth,getUser)
 router.post("/:user_id",auth,updateUser)
-router.post("/logout",auth,logout)
 router.delete("/:user_id",auth,userDelete)
 
 

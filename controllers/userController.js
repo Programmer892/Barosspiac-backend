@@ -79,7 +79,7 @@ async function logout(req, res) {
 
 async function userDelete(req,res)
 {
-    const {user_id} = req.user.user_id;
+    const user_id = req.user.user_id;
    
     try {
         const [result] = await pool.query("DELETE FROM users WHERE `users`.`user_id` = ?", [user_id]);
@@ -111,7 +111,7 @@ const getUser = async (req, res) => {
 
 
 const updateUser = async (req, res) => {
-    const { user_id } = req.users.user_id;
+    const user_id  = req.user.user_id;
     const { email, psw, fullname } = req.body;
 
     if (!user_id) {

@@ -6,13 +6,13 @@ const getCategory = async (req, res) => {
 
     try {
         const [response] = await pool.query("SELECT * FROM `main_categories` INNER JOIN sub_category ON sub_category.category_id = main_categories.category_id INNER JOIN subsubcategory ON subsubcategory.sub_category_id = sub_category.sub_category_id");
-        
+        console.log(response);
 
         const categories = []
 
        response.forEach((row) =>{
             
-        console.log(row)
+      
 
             let category = categories.find(c => c.category_id === row.category_id)
             if(!category){
