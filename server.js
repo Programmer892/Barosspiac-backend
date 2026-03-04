@@ -4,7 +4,10 @@ import dotenv from "dotenv"
 import userRoute from "./routes/userRoute.js"
 import productRoute from "./routes/productRoute.js"
 import categoryRoute from "./routes/categoryRoute.js"
+import ratingsRoute from './routes/ratingsRoute.js'
 import { error } from "console"
+
+
 dotenv.config()
 
 const PORT = process.env.PORT
@@ -20,6 +23,7 @@ app.use(cors({origin: "*"}))
 app.use("/api/user",userRoute)
 app.use("/api/product",productRoute)
 app.use("/api/category",categoryRoute)
+app.use("/api/ratings",ratingsRoute)
 
 
 

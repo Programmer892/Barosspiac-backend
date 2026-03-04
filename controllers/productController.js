@@ -1,9 +1,8 @@
 import pool from "../config/db.js"
-import bcrypt from "bcryptjs"
-import jwt from "jsonwebtoken"
 import dotenv from "dotenv"
-import { error } from "console"
+
 dotenv.config()
+
 
 
 
@@ -23,7 +22,7 @@ const getProduct = async (req, res) => {
 
 const getProduct2 = async (req, res) => {
     try {
-        const [response] = await pool.query("SELECT * FROM `product` INNER JOIN main_categories ON main_categories.category_id = product.category_id ORDER BY `product`.`product_upload` DESC LIMIT 20");
+        const [response] = await pool.query("SELECT * FROM product INNER JOIN main_categories ON main_categories.category_id = product.category_id INNER JOIN sub_category  ON sub_category.sub_category_id = product.sub_category_id;");
        
         console.log(response);
        
@@ -104,7 +103,59 @@ const updateProduct = async (req, res) => {
     }
 };
 
+const getProductbyid = async (req,res) => 
+    {
+
+        const {product_id} = req.params
+        console.log(product_id);
+        
+        try {
+            const [response] = await pool.query("SELECT p.*, mc.category_name, sc.sub_category_name, ssc.sub_sub_name, u.fullname,u.userClass FROM product p INNER JOIN main_categories mc ON mc.category_id = p.category_id INNER JOIN sub_category sc ON sc.sub_category_id = p.sub_category_id INNER JOIN subsubcategory ssc ON ssc.sub_sub_category_id = p.sub_sub_category_id INNER JOIN users u ON u.user_id = p.user_id  WHERE p.product_id = ?" , [product_id] )
+            console.log(response);
+
+            if (response.length === 0) {
+                return res.status(404).json({ message: "Nincs ilyen termék" });
+            }
+           
+            
+           res.status(200).json(response);
+           
+        }
+        catch (error) {
+            return res.status(500).json({ message: 'Szerver hiba', error: error.message });
+        }
+
+    }
 
 
-export {getProduct,postProduct,deleteProduct,updateProduct,getProduct2}
+    const getSimilarProduct = async (req,res) => 
+        {
+    
+            const {sub_category_id,product_id} = req.params
+         
+            
+            try {
+                const [response] = await pool.query("SELECT * FROM `product` WHERE product_id != ? AND sub_category_id = ? LIMIT 4" , [product_id,sub_category_id] )
+                console.log(response);
+    
+                if (response.length === 0) {
+                    return res.status(404).json({ message: "Nincs ilyen termék" });
+                }
+               
+                
+               res.status(200).json(response);
+               
+            }
+            catch (error) {
+                return res.status(500).json({ message: 'Szerver hiba', error: error.message });
+            }
+    
+        }
+    
+
+
+
+
+
+export {getProduct,postProduct,deleteProduct,updateProduct,getProduct2,getProductbyid,getSimilarProduct}
 
