@@ -9,7 +9,7 @@ router.get("/latestProduct",getProduct)
 router.get("/getProduct",getProduct2)
 router.post("/postProduct",postProduct)
 router.delete("/:product_id",auth,deleteProduct)
-router.post("/update/:product_id",updateProduct)
+router.post("/update",updateProduct)
 router.get("/:product_id",getProductbyid)
 router.get("/similar/:sub_category_id/:product_id",getSimilarProduct)
 

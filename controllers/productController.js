@@ -39,7 +39,9 @@ const getProduct2 = async (req, res) => {
 async function postProduct(req,res) 
 {
 
-    const user_id = req.user.user_id;
+    const {user_id} = req.body;
+    console.log(user_id);
+    const {product_id} = req.body
     console.log(user_id);
 
 
@@ -48,8 +50,8 @@ async function postProduct(req,res)
    try {
     
 
-    const res = await pool.query("INSERT INTO `product` (`product_id`, `user_id`, `product_title`, `product_desc`, `product_price`, `product_condition`, `product_collpoint`, `product_size`, `product_subject`, `product_class`, `category_id`, `sub_category_id`, `sub_sub_category_id`, `is_sold`, `product_upload`) VALUES (NULL, ?, '', '', '', '', '', NULL, NULL, NULL, '', '', '', '0', current_timestamp())",[user_id,product_title,product_desc,product_price,product_condition,product_collpoint,product_size,product_subject,product_class,category_id,sub_category_id,sub_subcategory_id,is_sold])
-    console.log(res);
+    const [result] = await pool.query("INSERT INTO `product` (`product_id`, `user_id`, `product_title`, `product_desc`, `product_price`, `product_condition`, `product_collpoint`, `product_size`, `product_subject`, `product_class`, `category_id`, `sub_category_id`, `sub_sub_category_id`, `is_sold`, `product_upload`) VALUES (NULL,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, current_timestamp())",[user_id,product_title,product_desc,product_price,product_condition,product_collpoint,product_size,product_subject,product_class,category_id,sub_category_id,sub_subcategory_id,is_sold])
+    console.log(result);
     return res.status(200).json({message: "Sikeres feltöltés!"})  
   
    } catch (error) {
@@ -79,20 +81,18 @@ async function deleteProduct(req,res)
 
 const updateProduct = async (req, res) => {
    
-  
+    const {user_id} = req.body;
+    console.log(user_id);
+
      
     
-    const {product_id,product_title,product_desc,product_price,product_condition,product_collpoint,product_size,product_subject,product_class,category_id,sub_category_id} = req.body;
+    const {product_id,product_title,product_desc,product_price,product_condition,product_collpoint,product_size,product_subject,product_class,category_id,sub_category_id,sub_sub_category_id,is_sold} = req.body;
 
     console.log(product_id);
 
     try {
-        const [result] = await pool.query(
-            "UPDATE `product` SET `product_title` = '', `product_desc` = '', `product_price` = '', `product_condition` = '', `product_collpoint` = '', `product_size` = '', `product_subject` = '', `product_class` = '', `category_id` = '', `sub_category_id` = '', `is_sold` = '' WHERE `product`.`product_id` = ?",
-            [product_title,product_desc,product_price,product_condition,product_collpoint,product_size,product_subject,product_class,category_id,sub_category_id,product_id]
-        );
+        const [result] = await pool.query("UPDATE `product` SET `product_title` = ?, `product_desc` = ?, `product_price` = ?, `product_condition` = ?, `product_collpoint` = ?, `product_size` = ?, `product_subject` = ?, `product_class` = ?, `category_id` = ?, `sub_category_id` = ?, `sub_sub_category_id` = ?, `is_sold` = ? WHERE `product`.`product_id` = ?",[product_title,product_desc,product_price,product_condition,product_collpoint,product_size,product_subject,product_class,category_id,sub_category_id,sub_sub_category_id,is_sold,product_id]);
        
-
         if (result.affectedRows === 0) {
             return res.status(404).json({ message: 'Termék nem található' });
         }
@@ -107,10 +107,14 @@ const getProductbyid = async (req,res) =>
     {
 
         const {product_id} = req.params
+
+        
         console.log(product_id);
         
         try {
             const [response] = await pool.query("SELECT p.*, mc.category_name, sc.sub_category_name, ssc.sub_sub_name, u.fullname,u.userClass FROM product p INNER JOIN main_categories mc ON mc.category_id = p.category_id INNER JOIN sub_category sc ON sc.sub_category_id = p.sub_category_id INNER JOIN subsubcategory ssc ON ssc.sub_sub_category_id = p.sub_sub_category_id INNER JOIN users u ON u.user_id = p.user_id  WHERE p.product_id = ?" , [product_id] )
+           
+
             console.log(response);
 
             if (response.length === 0) {
@@ -135,7 +139,7 @@ const getProductbyid = async (req,res) =>
          
             
             try {
-                const [response] = await pool.query("SELECT * FROM `product` WHERE product_id != ? AND sub_category_id = ? LIMIT 4" , [product_id,sub_category_id] )
+                const [response] = await pool.query("SELECT p.*, mc.category_name, sc.sub_category_name, ssc.sub_sub_name, u.fullname,u.userClass FROM product p INNER JOIN main_categories mc ON mc.category_id = p.category_id INNER JOIN sub_category sc ON sc.sub_category_id = p.sub_category_id INNER JOIN subsubcategory ssc ON ssc.sub_sub_category_id = p.sub_sub_category_id INNER JOIN users u ON u.user_id = p.user_id  WHERE p.product_id != ? AND sc.sub_category_id = ? LIMIT 4" , [product_id,sub_category_id] )
                 console.log(response);
     
                 if (response.length === 0) {

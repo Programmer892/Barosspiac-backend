@@ -4,10 +4,11 @@ import pool from "../config/db.js"
 async function postRatings(req, res) {
 
    const { rate, text } = req.body;
-   const  {rated_id}  = req.params;
+   const  {rated_id}  = req.body;
+   const {rater_id} = req.body
+   
 
-   const rater_id = req.user.user_id;
-   console.log(rated_id);
+   console.log(rated_id,rater_id);
 
    if (!rate || rate < 1 || rate > 5) {
        return res.status(400).json({ message: "1 és 5 között lehet értékelni" });
@@ -15,7 +16,7 @@ async function postRatings(req, res) {
 
    try {
 
-       await pool.query(`INSERT INTO ratings (rater_id, rated_id, rate, text, created_at) VALUES ('', '', '', '', CURRENT_TIMESTAMP())`,[rater_id, rated_id, rate, text]);
+       await pool.query(`INSERT INTO ratings (rating_id, rater_id, rated_id, rate, text, created_at) VALUES (NULL, ?, ?, ?, ?, current_timestamp())`,[rater_id,rated_id, rate, text]);
 
        return res.status(200).json({ message: "Sikeres értékelés" });
 
