@@ -38,12 +38,7 @@ async function getLikes(req, res) {
  
         const [result] = await pool.query(`DELETE FROM likes WHERE likes.user_id = ? AND likes.product_id = ?`,[user_id,product_id]);
 
-        if (result.length > 0) {
-            return res.status(200).json({liked: true})
-        }
-        else {
-            return res.status(200).json({liked: false})
-        }
+        res.status(200).json({message:"Sikeresen törölve a kedvencek közül"});
  
        
     } catch (error) {
@@ -66,7 +61,7 @@ async function getLikes(req, res) {
        
 
 
-        return res.status(200).json({message:"Sikeres kedvelés"});
+        return res.status(200).json({message:"Sikeresen hozzáadva a kedvencekhez"});
  
     } catch (error) {
         console.log(error);

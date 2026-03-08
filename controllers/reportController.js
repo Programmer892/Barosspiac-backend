@@ -7,6 +7,8 @@ async function postReport(req, res) {
 
     const user_id = req.user.user_id
     const {text,product_id,reported_id,reason} = req.body
+    console.log(reason);
+    
     try {
  
         await pool.query('INSERT INTO `reports` (`report_id`, `reporter_id`, `reported_id`, `product_id`, `text`, `sending_date`, `reason`) VALUES (NULL,?,?,?,?,current_timestamp(),?)',[user_id,reported_id,product_id,text,reason]);
