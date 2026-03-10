@@ -7,6 +7,8 @@ import categoryRoute from "./routes/categoryRoute.js"
 import ratingsRoute from './routes/ratingsRoute.js'
 import likeRoute from './routes/likeRoute.js'
 import reportRoute from './routes/reportRoute.js'
+import converstationRoute from './routes/conversationRoute.js'
+import orderRoute from './routes/orderRoute.js'
 import { error } from "console"
 
 
@@ -28,6 +30,8 @@ app.use("/api/category",categoryRoute)
 app.use("/api/ratings",ratingsRoute)
 app.use("/api/likes",likeRoute)
 app.use("/api/reports",reportRoute)
+app.use("/api/converstations",converstationRoute)
+app.use("/api/orders",orderRoute)
 
 
 

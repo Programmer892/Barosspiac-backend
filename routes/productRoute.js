@@ -6,7 +6,7 @@ import auth from "../middleware/authMiddleware.js"
 
 const router = express.Router()
 router.get("/latestProduct",getProduct)
-router.get("/getProduct",getProduct2)
+router.get("/getProduct",auth,getProduct2)
 router.post("/postProduct",postProduct)
 router.delete("/:product_id",auth,deleteProduct)
 router.post("/update",updateProduct)
