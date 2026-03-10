@@ -8,7 +8,7 @@ import ratingsRoute from './routes/ratingsRoute.js'
 import likeRoute from './routes/likeRoute.js'
 import reportRoute from './routes/reportRoute.js'
 import { error } from "console"
-
+// a vizsgán tudnod kell hogyan kell átállítani a package.json fájlt az importálásokhoz
 
 dotenv.config()
 
