@@ -20,11 +20,41 @@ const getProduct = async (req, res) => {
     }
 }
 
+const getByuserProduct = async (req, res) => {
+    const {user_id} = req.params
+    try {
+        const [response] = await pool.query("SELECT * FROM `product` INNER JOIN main_categories ON main_categories.category_id = product.category_id WHERE user_id = ? AND is_sold = 0 ",[user_id]);
+        console.log(response);
+       
+        
+       res.status(200).json(response);
+       
+    }
+    catch (error) {
+        return res.status(500).json({ message: 'Szerver hiba', error: error.message });
+    }
+}
+
+const getByuserSoldProduct = async (req, res) => {
+    const {user_id} = req.params
+    try {
+        const [response] = await pool.query("SELECT * FROM `product` INNER JOIN main_categories ON main_categories.category_id = product.category_id WHERE user_id = ? AND is_sold = 1 ",[user_id]);
+        console.log(response);
+       
+        
+       res.status(200).json(response);
+       
+    }
+    catch (error) {
+        return res.status(500).json({ message: 'Szerver hiba', error: error.message });
+    }
+}
+
 const getProduct2 = async (req, res) => {
 
-    const user_id = req.user.user_id
+
     try {
-        const [response] = await pool.query("SELECT product.*, main_categories.category_name, sub_category.sub_category_name, subsubcategory.sub_sub_name, users.fullname, users.userClass, users.pfp, COUNT(l.user_id) AS is_liked FROM product INNER JOIN main_categories ON main_categories.category_id = product.category_id INNER JOIN sub_category ON sub_category.sub_category_id = product.sub_category_id INNER JOIN subsubcategory ON subsubcategory.sub_sub_category_id = product.sub_sub_category_id INNER JOIN users ON users.user_id = product.user_id LEFT JOIN likes l ON l.product_id = product.product_id AND l.user_id = ? GROUP BY product.product_id;",[user_id]);
+        const [response] = await pool.query("SELECT product.*, main_categories.category_name, sub_category.sub_category_name, subsubcategory.sub_sub_name, users.fullname, users.userClass, users.pfp, COUNT(l.user_id) AS is_liked FROM product INNER JOIN main_categories ON main_categories.category_id = product.category_id INNER JOIN sub_category ON sub_category.sub_category_id = product.sub_category_id INNER JOIN subsubcategory ON subsubcategory.sub_sub_category_id = product.sub_sub_category_id INNER JOIN users ON users.user_id = product.user_id LEFT JOIN likes l ON l.product_id = product.product_id  GROUP BY product.product_id;");
        
         console.log(response);
        
@@ -163,5 +193,5 @@ const getProductbyid = async (req,res) =>
 
 
 
-export {getProduct,postProduct,deleteProduct,updateProduct,getProduct2,getProductbyid,getSimilarProduct}
+export {getProduct,postProduct,deleteProduct,updateProduct,getProduct2,getProductbyid,getSimilarProduct,getByuserProduct,getByuserSoldProduct}
 

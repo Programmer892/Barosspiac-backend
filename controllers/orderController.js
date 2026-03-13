@@ -82,7 +82,7 @@ async function updateOrder(req,res)
    try {
     
 
-    const [result] = await pool.query("UPDATE `orders` SET `buyer_id` = ?, `seller_id` = ?, `product_id` = ?, `order_status` = 'pending' WHERE `orders`.`order_id` = ?",[order_id,user_id,seller_id,product_id,order_status])
+    const [result] = await pool.query("UPDATE `orders` SET `buyer_id` = ?, `seller_id` = ?, `product_id` = ?, `order_status` = 'pending' WHERE `orders`.`order_id` = ?",[order_id,buyer_id,seller_id,product_id,order_status])
     console.log(result);
     return res.status(200).json({message: "Rendelés módosítva!"})  
   

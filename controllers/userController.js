@@ -30,7 +30,23 @@ async function userRegister(req,res)
     const hashedpsw = await bcrypt.hash(psw,10)
 
     await pool.query("INSERT INTO `users` (`user_id`, `pfp`, `email`, `psw`, `fullname`, `userClass`, `role`, `verified`, `created_at`) VALUES (NULL,NULL, ?, ?, ?, ?, 'regisztralt', '0', current_timestamp())",[email,hashedpsw,fullname,userClass])
+
     return res.status(200).json({message: "Sikeres regisztráció"}) 
+   } catch (error) {
+    console.log(error);
+    return  res.status(500).json({message: "Szerver hiba", error:error.message})
+   }
+}
+
+async function userallInformation(req,res) 
+{
+   const {user_id} = req.params
+   console.log(user_id);
+   
+
+   try {
+   const [result] = await pool.query("SELECT u.*,u.user_id, u.fullname, u.userClass, u.pfp, u.created_at, (SELECT COUNT(*) FROM product WHERE user_id = u.user_id AND is_sold = 0) AS active, (SELECT COUNT(*) FROM product WHERE user_id = u.user_id AND is_sold = 1) AS sold_items, (SELECT COUNT(*) FROM likes WHERE user_id = u.user_id) AS favorites, (SELECT COUNT(*) FROM likes WHERE product_id IN (SELECT product_id FROM product WHERE user_id = u.user_id)) AS liked, (SELECT ROUND(AVG(rate), 1) FROM ratings WHERE rated_id = u.user_id) AS avg_ratings, (SELECT COUNT(*) FROM ratings WHERE rated_id = u.user_id) AS ratings_number FROM users u WHERE u.user_id = ?", [user_id])
+    return res.status(200).json(result[0]) 
    } catch (error) {
     console.log(error);
     return  res.status(500).json({message: "Szerver hiba", error:error.message})
@@ -98,7 +114,7 @@ const getUser = async (req, res) => {
     const user_id = req.user.user_id
     console.log(user_id);
     try {
-        const [rows] = await pool.query("SELECT * FROM `users` WHERE user_id = ?", [user_id]);
+        const [rows] = await pool.query("SELECT u.*,u.user_id, u.fullname, u.userClass, u.pfp, u.created_at, (SELECT COUNT(*) FROM product WHERE user_id = u.user_id AND is_sold = 0) AS active, (SELECT COUNT(*) FROM product WHERE user_id = u.user_id AND is_sold = 1) AS sold_items, (SELECT COUNT(*) FROM likes WHERE user_id = u.user_id) AS favorites, (SELECT COUNT(*) FROM likes WHERE product_id IN (SELECT product_id FROM product WHERE user_id = u.user_id)) AS liked, (SELECT ROUND(AVG(rate), 1) FROM ratings WHERE rated_id = u.user_id) AS avg_ratings, (SELECT COUNT(*) FROM ratings WHERE rated_id = u.user_id) AS ratings_number FROM users u WHERE u.user_id = ?", [user_id]);
         if (rows.length === 0) {
             return res.status(404).json({ message: 'Felhasználó nem található' });
         }
@@ -106,39 +122,71 @@ const getUser = async (req, res) => {
     }
     catch (error) {
         return res.status(500).json({ message: 'Szerver hiba', error: error.message });
-    }
+    } 
 }
 
 
 const updateUser = async (req, res) => {
     const user_id  = req.user.user_id;
-    const { email, psw, fullname } = req.body;
+    const {fullname,userClass} = req.body;
+    console.log(fullname);
+    console.log(userClass);
 
     if (!user_id) {
         return res.status(400).json({ message: 'Nincs ilyen felhasználó' });
     }
 
+
+
     try {
-        const [result] = await pool.query(
-            "UPDATE `users` SET `email` = ?, `psw` = ?, `fullname` = ? WHERE `user_id` = ?",
-            [email, psw, fullname, user_id]
+        const [existingUser] = await pool.query("SELECT * FROM users WHERE fullname = ? AND user_id != ?",[fullname,user_id])
+        console.log(existingUser);
+        if (existingUser.length > 0) {
+            return res.status(400).json({message:"Ez a felhasználónév foglalt"})
+        }
+        
+        const [result] = await pool.query("UPDATE `users` SET `fullname` = COALESCE(NULLIF(?, ''), fullname) ,userClass = COALESCE(NULLIF(?, ''), userClass)  WHERE `user_id` = ?",[fullname,userClass,user_id]
         );
        
-
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ message: 'Felhasználó nem található' });
-        }
+       
 
         res.status(200).json({ message: 'Sikeres változtatás' });
     } catch (error) {
+        console.log(error);
         res.status(500).json({ message: "Szerverhiba", error: error.message });
     }
 };
 
+const updatePassword = async(req,res) =>{
+
+    const user_id = req.user.user_id
+    const {password, newPsw} = req.body
+
+    try {
+       
+        const [rows] = await pool.query("SELECT * FROM users WHERE user_id = ?", [user_id])
+       
+        const user = rows[0]
+      
+        const match = await bcrypt.compare(password,user.psw)
+        if(!match){
+            return res.status(400).json({message: "A jelenlegi jelszó nem egyezik"})
+        }
+        return res.status(200).json({message: "Jó"})
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ message: "Szerverhiba", error: error.message });
+    }
+}
 
 
 
-export {userRegister,userLogin,logout,userDelete,getUser,updateUser}
+
+
+
+
+
+export {userRegister,userLogin,logout,userDelete,getUser,updateUser,userallInformation,updatePassword}
 
 
 
