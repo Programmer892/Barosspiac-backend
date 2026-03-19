@@ -33,9 +33,10 @@ async function getLikes(req, res) {
 
     const user_id = req.user.user_id
     const {product_id}  = req.params;
-
+    
  
     try {
+
  
         const [result] = await pool.query(`SELECT DISTINCT * FROM likes INNER JOIN product ON product.product_id = likes.product_id where likes.user_id = ?`,[user_id,product_id]);
         console.log(result);
@@ -72,7 +73,7 @@ async function getLikes(req, res) {
  async function deleteAllLike(req, res) {
 
     const user_id = req.user.user_id
-   
+
 
  
     try {

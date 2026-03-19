@@ -1,7 +1,7 @@
 import pool from "../config/db.js"
 import bcrypt from "bcryptjs"
 import jwt from "jsonwebtoken"
-import dotenv from "dotenv"
+import dotenv, { decrypt } from "dotenv"
 import { error } from "console"
 dotenv.config()
 
@@ -96,10 +96,23 @@ async function logout(req, res) {
 async function userDelete(req,res)
 {
     const user_id = req.user.user_id;
-   
+    const {psw} = req.query
+    console.log(psw);
     try {
+
+        const [rows] = await pool.query("SELECT * FROM users WHERE user_id = ?", [user_id])
+       
+        const user = rows[0]
+
+        const match = await bcrypt.compare(psw,user.psw)
+        console.log(match);
+
+        if(!match){
+            return res.status(400).json({message: "A jelenlegi jelszó nem egyezik"})
+        }
+
         const [result] = await pool.query("DELETE FROM users WHERE `users`.`user_id` = ?", [user_id]);
-        console.log(user_id);
+      
         if(result.affectedRows === 0){
             return res.status(404).json({message: 'Felhasználó nem található'});
         }
@@ -136,8 +149,6 @@ const updateUser = async (req, res) => {
         return res.status(400).json({ message: 'Nincs ilyen felhasználó' });
     }
 
-
-
     try {
         const [existingUser] = await pool.query("SELECT * FROM users WHERE fullname = ? AND user_id != ?",[fullname,user_id])
         console.log(existingUser);
@@ -172,7 +183,10 @@ const updatePassword = async(req,res) =>{
         if(!match){
             return res.status(400).json({message: "A jelenlegi jelszó nem egyezik"})
         }
-        return res.status(200).json({message: "Jó"})
+        const newHashedPsw = await bcrypt.hash(newPsw,10)
+        const rows2 = await pool.query("UPDATE `users` SET `psw` = ? WHERE `users`.`user_id` = ?",[newHashedPsw,user_id]) 
+        return res.status(200).json({message: "Sikeres jelszó módosítás!"})
+
     } catch (error) {
         console.log(error);
         res.status(500).json({ message: "Szerverhiba", error: error.message });
@@ -180,13 +194,31 @@ const updatePassword = async(req,res) =>{
 }
 
 
+const updateNotifications = async (req, res) => {
+    const user_id  = req.user.user_id;
+    const {notify_message,notify_rating,notify_sold} = req.body;
+
+    console.log(notify_message);
+    try {
+       
+        const [result] = await pool.query("UPDATE `users` SET `notify_message` = ?, `notify_rating` = ?, `notify_sold` = ? WHERE `users`.`user_id` = ?",[notify_message,notify_rating,notify_sold,user_id]
+        
+        );
+       
+        res.status(200).json({ message: 'Sikeres vátoztatások' });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ message: "Szerverhiba", error: error.message });
+    }
+};
 
 
 
 
 
 
-export {userRegister,userLogin,logout,userDelete,getUser,updateUser,userallInformation,updatePassword}
+
+export {userRegister,userLogin,logout,userDelete,getUser,updateUser,userallInformation,updatePassword,updateNotifications}
 
 
 

@@ -80,8 +80,6 @@ async function postProduct(req,res)
    const {product_title,product_desc,product_price,product_condition,product_collpoint,product_size,product_subject,product_class,category_id,sub_category_id,sub_subcategory_id,is_sold} = req.body
 
    try {
-    
-
     const [result] = await pool.query("INSERT INTO `product` (`product_id`, `user_id`, `product_title`, `product_desc`, `product_price`, `product_condition`, `product_collpoint`, `product_size`, `product_subject`, `product_class`, `category_id`, `sub_category_id`, `sub_sub_category_id`, `is_sold`, `product_upload`) VALUES (NULL,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, current_timestamp())",[user_id,product_title,product_desc,product_price,product_condition,product_collpoint,product_size,product_subject,product_class,category_id,sub_category_id,sub_subcategory_id,is_sold])
     console.log(result);
     return res.status(200).json({message: "Sikeres feltöltés!"})  
