@@ -3,21 +3,27 @@ import pool from "../config/db.js"
 
 
 const getMessages = async (req, res) => {
-    const {conversations_id} = req.params
-    const {user2_id} = req.params
-    const user_id = req.user.user_id
-    console.log(conversations_id);
-    console.log(user2_id);
+    const { conversations_id } = req.params
 
     try {
-        const [user1] = await pool.query("SELECT messages.message,messages.sent_at,messages.message_id FROM `messages` WHERE sender_id = ? AND conversations_id = ?  ORDER BY `sent_at` DESC",[user_id,conversations_id]);
-        const [user2] = await pool.query("SELECT messages.message,messages.sent_at,messages.message_id FROM `messages` WHERE sender_id = ? AND conversations_id = ?  ORDER BY `sent_at` DESC",[user2_id,conversations_id]);
-        
-       res.status(200).json({user1: user1,user2:user2});
-       
-    }
-    catch (error) {
-        return res.status(500).json({ message: 'Szerver hiba', error: error.message });
+        const [messages] = await pool.query(
+            `SELECT 
+                m.message_id,
+                m.message,
+                m.sent_at,
+                m.sender_id,
+                u.fullname
+             FROM messages m
+             JOIN users u ON m.sender_id = u.user_id
+             WHERE m.conversations_id = ?
+             ORDER BY m.sent_at ASC`,
+            [conversations_id]
+        )
+
+        res.status(200).json(messages)
+
+    } catch (error) {
+        res.status(500).json({ message: 'Szerver hiba', error: error.message })
     }
 }
 

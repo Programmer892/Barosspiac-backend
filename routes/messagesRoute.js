@@ -7,7 +7,7 @@ import { getMessages } from "../controllers/messagesController.js"
 const router = express.Router()
 
 
-router.get("/message/:conversations_id/:user2_id",auth,getMessages)
+router.get("/message/:conversations_id",auth,getMessages)
 
 export default router
 
