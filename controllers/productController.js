@@ -1,15 +1,11 @@
 import pool from "../config/db.js"
 import dotenv from "dotenv"
 import cloud from "../config/Cloudinary.js"
-import multer from "multer"
+
 
 
 dotenv.config()
 
-const upload = multer({
-    storage: multer.memoryStorage()
-
-})
 
 
 
@@ -78,23 +74,44 @@ const getProduct2 = async (req, res) => {
 async function postProduct(req,res) 
 {
     try {
-        const {form,images} = req.body
+        const { title, desc, price, condition, size, subject, collpoint, category_id, sub_category_id, sub_sub_category_id } = req.body;
+        const user_id = req.user.user_id;
+
         console.log(form,images);
         const uploadedUrls = []
         for (const file of req.files) {
             const result = await new Promise((resolve, reject) => {
-                const stream = cloud.uploader.upload_stream({
-                    folder: "barosspiac",
-
-                },(error,result) => error ? reject(error): resolve(result) )
+                const stream = cloud.uploader.upload_stream(
+                    { folder: "barosspiac" },
+                    (error, result) => error ? reject(error) : resolve(result)
+                )
                 stream.end(file.buffer)
-
-              
             })
             uploadedUrls.push(result.secure_url)
         }
+
+        // Termék mentése DB-be
+        const [dbResult] = await pool.query(
+            `INSERT INTO product 
+            (user_id, product_title, product_desc, product_price, product_condition, product_size, product_subject, product_collpoint, category_id, sub_category_id, sub_sub_category_id) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [user_id, title, desc, price, condition, size || null, subject || null, collpoint, category_id, sub_category_id, sub_sub_category_id]
+        )
+
+        const product_id = dbResult.insertId
+
+        // Képek mentése DB-be
+        for (const url of uploadedUrls) {
+            await pool.query(
+                'INSERT INTO productimg (product_id, product_img) VALUES (?, ?)',
+                [product_id, url]
+            )
+        }
+
+        res.status(201).json({ message: "Termék sikeresen feltöltve", product_id })
+
     } catch (error) {
-        res.status(500).json({message: "Szerver hiba", error: error.message})
+        res.status(500).json({ message: "Szerver hiba", error: error.message })
     }
     
 }
