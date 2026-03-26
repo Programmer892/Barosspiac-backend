@@ -27,23 +27,7 @@ const getMessages = async (req, res) => {
     }
 }
 
-async function postMessage(req, res) {
 
-    const { conversation_id, sender_id, message } = req.body;
-   
-    console.log(reason);
-    
-    try {
- 
-        await pool.query("INSERT INTO messages (conversations_id, sender_id, message, sent_at) VALUES (?, ?, ?, current_timestamp())",[conversation_id, sender_id, message]);
- 
-        return res.status(200).json({ message: "Üzenet elküldve" });
- 
-    } catch (error) {
-        console.log(error);
-        return res.status(500).json({ message: "Szerver hiba", error: error.message });
-    }
- }
 
 
 

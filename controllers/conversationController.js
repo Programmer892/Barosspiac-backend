@@ -30,6 +30,28 @@ const getConversation = async (req, res) => {
 }
 
 
+async function postConversation(req, res) {
+    const user1_id = req.user.user_id
+    const {user2_id} = req.body;
+
+   
+    try {
+        const [exist] = await pool.query(`SELECT *,users.fullname FROM conversations INNER JOIN users ON users.user_id = ? WHERE (user1_id = ? AND user2_id = ?) OR (user2_id = ? AND user1_id = ?)`, [user2_id,user1_id, user2_id, user1_id, user2_id])
+        console.log(exist);
+        if (exist.length > 0) {
+            return res.status(200).json(exist[0])
+        }
+        await pool.query("INSERT INTO `conversations`(`user1_id`, `user2_id`) VALUES (?,?)",[user1_id,user2_id]);
+ 
+        return res.status(200).json({ message: "Üzenet elküldve" });
+ 
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: "Szerver hiba", error: error.message });
+    }
+ }
 
 
-export { getConversation }
+
+
+export { getConversation,postConversation }

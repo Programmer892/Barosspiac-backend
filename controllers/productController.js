@@ -1,8 +1,15 @@
 import pool from "../config/db.js"
 import dotenv from "dotenv"
+import cloud from "../config/Cloudinary.js"
+import multer from "multer"
+
 
 dotenv.config()
 
+const upload = multer({
+    storage: multer.memoryStorage()
+
+})
 
 
 
@@ -70,24 +77,26 @@ const getProduct2 = async (req, res) => {
 
 async function postProduct(req,res) 
 {
+    try {
+        const {form,images} = req.body
+        console.log(form,images);
+        const uploadedUrls = []
+        for (const file of req.files) {
+            const result = await new Promise((resolve, reject) => {
+                const stream = cloud.uploader.upload_stream({
+                    folder: "barosspiac",
 
-    const {user_id} = req.body;
-    console.log(user_id);
-    const {product_id} = req.body
-    console.log(user_id);
+                },(error,result) => error ? reject(error): resolve(result) )
+                stream.end(file.buffer)
 
-
-   const {product_title,product_desc,product_price,product_condition,product_collpoint,product_size,product_subject,product_class,category_id,sub_category_id,sub_subcategory_id,is_sold} = req.body
-
-   try {
-    const [result] = await pool.query("INSERT INTO `product` (`product_id`, `user_id`, `product_title`, `product_desc`, `product_price`, `product_condition`, `product_collpoint`, `product_size`, `product_subject`, `product_class`, `category_id`, `sub_category_id`, `sub_sub_category_id`, `is_sold`, `product_upload`) VALUES (NULL,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, current_timestamp())",[user_id,product_title,product_desc,product_price,product_condition,product_collpoint,product_size,product_subject,product_class,category_id,sub_category_id,sub_subcategory_id,is_sold])
-    console.log(result);
-    return res.status(200).json({message: "Sikeres feltöltés!"})  
-  
-   } catch (error) {
-    console.log(error);
-    return  res.status(500).json({message: "Szerver hiba", error:error.message})
-   }
+              
+            })
+            uploadedUrls.push(result.secure_url)
+        }
+    } catch (error) {
+        res.status(500).json({message: "Szerver hiba", error: error.message})
+    }
+    
 }
 
 async function deleteProduct(req,res)
