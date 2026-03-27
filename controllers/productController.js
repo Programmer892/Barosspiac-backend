@@ -1,6 +1,6 @@
 import pool from "../config/db.js"
 import dotenv from "dotenv"
-import cloud from "../config/Cloudinary.js"
+import cloudinary from "../config/cloudinary.js"
 
 
 
@@ -57,7 +57,7 @@ const getProduct2 = async (req, res) => {
 
 
     try {
-        const [response] = await pool.query("SELECT product.*, main_categories.category_name, sub_category.sub_category_name, subsubcategory.sub_sub_name, users.fullname, users.userClass, users.pfp, COUNT(l.user_id) AS is_liked FROM product INNER JOIN main_categories ON main_categories.category_id = product.category_id INNER JOIN sub_category ON sub_category.sub_category_id = product.sub_category_id INNER JOIN subsubcategory ON subsubcategory.sub_sub_category_id = product.sub_sub_category_id INNER JOIN users ON users.user_id = product.user_id LEFT JOIN likes l ON l.product_id = product.product_id  GROUP BY product.product_id;");
+        const [response] = await pool.query("SELECT product.*,productimg.*, main_categories.category_name, sub_category.sub_category_name, subsubcategory.sub_sub_name, users.fullname, users.userClass, users.pfp, COUNT(l.user_id) AS is_liked FROM product INNER JOIN main_categories ON main_categories.category_id = product.category_id INNER JOIN sub_category ON sub_category.sub_category_id = product.sub_category_id INNER JOIN subsubcategory ON subsubcategory.sub_sub_category_id = product.sub_sub_category_id INNER JOIN users ON users.user_id = product.user_id LEFT JOIN likes l ON l.product_id = product.product_id INNER JOIN productimg ON productimg.product_id = product.product_id  GROUP BY product.product_id;");
        
         console.log(response);
        
@@ -76,12 +76,14 @@ async function postProduct(req,res)
     try {
         const { title, desc, price, condition, size, subject, collpoint, category_id, sub_category_id, sub_sub_category_id } = req.body;
         const user_id = req.user.user_id;
-
-        console.log(form,images);
+        //console.log(cloudinary);
+        //console.log(cloud.uploader);
+        
+        
         const uploadedUrls = []
         for (const file of req.files) {
             const result = await new Promise((resolve, reject) => {
-                const stream = cloud.uploader.upload_stream(
+                const stream = cloudinary.uploader.upload_stream(
                     { folder: "barosspiac" },
                     (error, result) => error ? reject(error) : resolve(result)
                 )
@@ -111,6 +113,7 @@ async function postProduct(req,res)
         res.status(201).json({ message: "Termék sikeresen feltöltve", product_id })
 
     } catch (error) {
+        console.log(error);
         res.status(500).json({ message: "Szerver hiba", error: error.message })
     }
     

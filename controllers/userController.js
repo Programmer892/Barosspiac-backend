@@ -21,7 +21,11 @@ async function userRegister(req,res)
     }
 
    try {
+
+
+
     const [existinguser] = await pool.query("SELECT * FROM `users` WHERE email = ?",[email])
+
 
     if (existinguser.length > 0 ) {
         return await res.status(400).json({error: "Ez az email cím már foglalt", errorField: 'email'})
