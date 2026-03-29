@@ -13,6 +13,7 @@ import messagesRoute from "./routes/messagesRoute.js"
 import { error } from "console"
 import { createServer } from "http"
 import { Server } from "socket.io"
+import statisticRoute from "./routes/statisticRoute.js"
 import db from "./config/db.js"
 
 const app = express()
@@ -81,6 +82,7 @@ app.use("/api/reports",reportRoute)
 app.use("/api/conversations",conversationRoute)
 app.use("/api/orders",orderRoute)
 app.use("/api/messages",messagesRoute)
+app.use("/api/statistics",statisticRoute)
 
 
 
