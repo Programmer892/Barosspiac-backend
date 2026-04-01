@@ -2,6 +2,7 @@ import pool from "../config/db.js"
 import bcrypt from "bcryptjs"
 import jwt from "jsonwebtoken"
 import dotenv, { decrypt } from "dotenv"
+import cloudinary from "../config/cloudinary.js"
 import { error } from "console"
 dotenv.config()
 
@@ -21,15 +22,15 @@ async function userRegister(req,res)
     }
 
    try {
-
-
-
+    
     const [existinguser] = await pool.query("SELECT * FROM `users` WHERE email = ?",[email])
 
-
+    
     if (existinguser.length > 0 ) {
         return await res.status(400).json({error: "Ez az email cím már foglalt", errorField: 'email'})
     }
+
+
 
     const hashedpsw = await bcrypt.hash(psw,10)
 
@@ -42,10 +43,11 @@ async function userRegister(req,res)
    }
 }
 
+
 async function userallInformation(req,res) 
 {
    const {user_id} = req.params
-   console.log(user_id);
+
    
 
    try {

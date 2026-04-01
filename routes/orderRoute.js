@@ -8,6 +8,6 @@ router.post("/postorder",auth,postOrder)
 router.get("/getorder",auth,getOrder)
 router.get("/:order_id",getOrderById)
 router.delete("/:order_id",auth,deleteOrder)
-router.post("/updateorder",auth,updateOrder)
+router.put("/updateorder",auth,updateOrder)
 
 export default router

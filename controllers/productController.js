@@ -78,8 +78,17 @@ async function postProduct(req,res)
         const user_id = req.user.user_id;
         //console.log(cloudinary);
         //console.log(cloud.uploader);
+
+        if (price < 0) {
+            return res.status(400).json({message: "Nem lehet negatív a termék ára",errorField: "price"})
+        }
+
+        if (title.length < 3) {
+            return res.status(400).json({message: "A termék neve túl rövid",errorField: "title"})
+        }
+
         
-        
+    
         const uploadedUrls = []
         for (const file of req.files) {
             const result = await new Promise((resolve, reject) => {
@@ -97,7 +106,7 @@ async function postProduct(req,res)
             `INSERT INTO product 
             (user_id, product_title, product_desc, product_price, product_condition, product_size, product_subject, product_collpoint, category_id, sub_category_id, sub_sub_category_id) 
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [user_id, title, desc, price, condition, size || null, subject || null, collpoint, category_id, sub_category_id, sub_sub_category_id]
+            [user_id, title, desc || "Leírás nincs megadva", price, condition, size || null, subject || null, collpoint, category_id, sub_category_id, sub_sub_category_id]
         )
 
         const product_id = dbResult.insertId
@@ -121,8 +130,8 @@ async function postProduct(req,res)
 
 async function deleteProduct(req,res)
 {
-    const {product_id} = req.product.product_id;
-    req.user.user_id;
+    const {product_id} = req.params
+   
    
     try {
         const [result] = await pool.query("DELETE FROM product WHERE `product`.`product_id` = ?", [product_id]);
@@ -167,11 +176,13 @@ const getProductbyid = async (req,res) =>
 
         const {product_id} = req.params
 
+
         
         console.log(product_id);
         
         try {
             const [response] = await pool.query("SELECT p.*, mc.category_name, sc.sub_category_name, ssc.sub_sub_name, u.fullname,u.userClass FROM product p INNER JOIN main_categories mc ON mc.category_id = p.category_id INNER JOIN sub_category sc ON sc.sub_category_id = p.sub_category_id INNER JOIN subsubcategory ssc ON ssc.sub_sub_category_id = p.sub_sub_category_id INNER JOIN users u ON u.user_id = p.user_id  WHERE p.product_id = ?" , [product_id] )
+           const [images] = await pool.query("SELECT * FROM `productimg` WHERE product_id = ?",[product_id])
            
 
             console.log(response);
@@ -181,7 +192,7 @@ const getProductbyid = async (req,res) =>
             }
            
             
-           res.status(200).json(response);
+           res.status(200).json({product_details: response,image: images});
            
         }
         catch (error) {
@@ -214,11 +225,29 @@ const getProductbyid = async (req,res) =>
             }
     
         }
+
+        const markAsSold = async (req,res) => 
+            {
+        
+                const {product_id} = req.params
+                const {is_sold} = req.body 
+        
+                try {
+                   const [response] = await pool.query("UPDATE `product` SET `is_sold`= ? WHERE product_id = ?" , [is_sold,product_id] )
+                 
+                   res.status(201).json(response);
+                   
+                }
+                catch (error) {
+                    return res.status(500).json({ message: 'Szerver hiba', error: error.message });
+                }
+        
+            }
     
 
 
 
 
 
-export {getProduct,postProduct,deleteProduct,updateProduct,getProduct2,getProductbyid,getSimilarProduct,getByuserProduct,getByuserSoldProduct}
+export {getProduct,postProduct,deleteProduct,updateProduct,getProduct2,getProductbyid,getSimilarProduct,getByuserProduct,getByuserSoldProduct,markAsSold}
 
