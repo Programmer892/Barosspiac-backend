@@ -15,6 +15,9 @@ import { createServer } from "http"
 import { Server } from "socket.io"
 import statisticRoute from "./routes/statisticRoute.js"
 import db from "./config/db.js"
+import notificationRoute from "./routes/notificationRoute.js"
+import {createNotification} from "./utils/notifications.js"
+
 
 const app = express()
 const server = createServer(app)
@@ -32,12 +35,12 @@ io.on('connection', (socket) => {
     })
 
     socket.on('send_message', async (data) => {
-        const { conversation_id, sender_id, message } = data
+        const { conversation_id, sender_id, message, message_state, sended_id } = data
 
         try {
             const [result] = await db.query(
-                'INSERT INTO messages (conversations_id, sender_id, message) VALUES (?, ?, ?)',
-                [conversation_id, sender_id, message]
+                'INSERT INTO messages (conversations_id, sender_id, message, message_state) VALUES (?, ?, ?, ?)',
+                [conversation_id, sender_id, message, message_state]
             )
 
             const newMessage = {
@@ -45,8 +48,11 @@ io.on('connection', (socket) => {
                 conversation_id,
                 sender_id,
                 message,
+                message_state,
                 sent_at: new Date()
             }
+
+            await createNotification(sended_id, 'new_message', 'Új üzeneted érkezett', "/messages")
 
             io.to(String(conversation_id)).emit('receive_message', newMessage)
 
@@ -55,6 +61,18 @@ io.on('connection', (socket) => {
             socket.emit('error', { message: 'Üzenet küldése sikertelen' })
         }
     })
+
+    socket.on('delete_message', async (data) => {
+        const { message_id, conversation_id } = data
+        try {
+            await db.query('DELETE FROM messages WHERE message_id = ?', [message_id])
+            io.to(String(conversation_id)).emit('message_deleted', { message_id })
+        } catch (err) {
+            console.error('Üzenet törlési hiba:', err)
+            socket.emit('error', { message: 'Üzenet törlése sikertelen' })
+        }
+    })
+
 
     socket.on('disconnect', () => {
         console.log('Lecsatlakozott:', socket.id)
@@ -83,6 +101,7 @@ app.use("/api/conversations",conversationRoute)
 app.use("/api/orders",orderRoute)
 app.use("/api/messages",messagesRoute)
 app.use("/api/statistics",statisticRoute)
+app.use("/api/notifications",notificationRoute)
 
 
 

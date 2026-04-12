@@ -32,13 +32,32 @@ async function getLikes(req, res) {
  async function getallLikes(req, res) {
 
     const user_id = req.user.user_id
-    const {product_id}  = req.params;
+ 
     
  
     try {
 
  
-        const [result] = await pool.query(`SELECT DISTINCT * FROM likes INNER JOIN product ON product.product_id = likes.product_id where likes.user_id = ?`,[user_id,product_id]);
+        const [result] = await pool.query(`SELECT 
+    product.*,
+    productimg.product_img,
+    main_categories.category_name,
+    sub_category.sub_category_name,
+    subsubcategory.sub_sub_name,
+    users.fullname,
+    users.userClass,
+    users.pfp,
+    COUNT(l.user_id) AS is_liked
+FROM product
+INNER JOIN main_categories ON main_categories.category_id = product.category_id
+INNER JOIN sub_category ON sub_category.sub_category_id = product.sub_category_id
+INNER JOIN subsubcategory ON subsubcategory.sub_sub_category_id = product.sub_sub_category_id
+INNER JOIN users ON users.user_id = product.user_id
+LEFT JOIN likes l ON l.product_id = product.product_id AND l.user_id = ?
+LEFT JOIN productimg ON productimg.product_id = product.product_id
+WHERE l.user_id = ?
+GROUP BY product.product_id
+ORDER BY product.product_upload DESC`,[user_id, user_id]);
         console.log(result);
 
         res.status(200).json(result)
