@@ -148,6 +148,35 @@ const getProduct2 = async (req, res) => {
     }
 }
 
+const getAllProduct = async (req, res) => {
+
+
+    try {
+        const [response] = await pool.query(`SELECT 
+    product.product_id,
+    product.product_title,
+    main_categories.category_name,
+    sub_category.sub_category_name,
+    subsubcategory.sub_sub_name,
+    users.fullname,
+    product.product_upload,
+    product.status,
+    product.is_sold
+    FROM product
+    INNER JOIN main_categories ON main_categories.category_id = product.category_id
+    INNER JOIN sub_category ON sub_category.sub_category_id = product.sub_category_id
+    INNER JOIN subsubcategory ON subsubcategory.sub_sub_category_id = product.sub_sub_category_id
+    INNER JOIN users ON users.user_id = product.user_id
+    ORDER BY product.product_upload DESC;`);
+
+        res.status(200).json(response);
+
+    }
+    catch (error) {
+        return res.status(500).json({ message: 'Szerver hiba', error: error.message });
+    }
+}
+
 
 async function postProduct(req, res) {
     try {
@@ -383,5 +412,5 @@ const markAsSold = async (req, res) => {
 
 
 
-export { getProduct, postProduct, deleteProduct, updateProduct, getProduct2, getProductbyid, getSimilarProduct, getByuserProduct, getByuserSoldProduct, markAsSold }
+export { getProduct, postProduct, deleteProduct, updateProduct, getProduct2, getProductbyid, getSimilarProduct, getByuserProduct, getByuserSoldProduct, markAsSold,getAllProduct }
 

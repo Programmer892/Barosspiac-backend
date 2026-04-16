@@ -48,15 +48,15 @@ async function getLikes(req, res) {
     users.userClass,
     users.pfp,
     COUNT(l.user_id) AS is_liked
-FROM product
-INNER JOIN main_categories ON main_categories.category_id = product.category_id
-INNER JOIN sub_category ON sub_category.sub_category_id = product.sub_category_id
-INNER JOIN subsubcategory ON subsubcategory.sub_sub_category_id = product.sub_sub_category_id
-INNER JOIN users ON users.user_id = product.user_id
-LEFT JOIN likes l ON l.product_id = product.product_id AND l.user_id = ?
-LEFT JOIN productimg ON productimg.product_id = product.product_id
-WHERE l.user_id = ?
-GROUP BY product.product_id
+    FROM product
+    INNER JOIN main_categories ON main_categories.category_id = product.category_id
+    INNER JOIN sub_category ON sub_category.sub_category_id = product.sub_category_id
+    INNER JOIN subsubcategory ON subsubcategory.sub_sub_category_id = product.sub_sub_category_id
+    INNER JOIN users ON users.user_id = product.user_id
+    LEFT JOIN likes l ON l.product_id = product.product_id AND l.user_id = ?
+    LEFT JOIN productimg ON productimg.product_id = product.product_id
+    WHERE l.user_id = ?
+    GROUP BY product.product_id
 ORDER BY product.product_upload DESC`,[user_id, user_id]);
         console.log(result);
 

@@ -1,5 +1,5 @@
 import express from "express"
-import { deleteProduct, getByuserProduct, getByuserSoldProduct, getProduct,getProduct2,getProductbyid,getSimilarProduct,markAsSold,postProduct, updateProduct } from "../controllers/productController.js"
+import { deleteProduct, getByuserProduct, getByuserSoldProduct, getProduct,getProduct2,getProductbyid,getSimilarProduct,markAsSold,postProduct, updateProduct,getAllProduct } from "../controllers/productController.js"
 import auth from "../middleware/authMiddleware.js"
 import multer from 'multer'
 
@@ -9,6 +9,7 @@ const upload = multer({ storage: multer.memoryStorage() })
 const router = express.Router()
 router.get("/latestProduct",auth,getProduct)
 router.get("/getProduct",auth,getProduct2)
+router.get("/allproduct",auth,getAllProduct)
 router.post("/postProduct",auth,upload.array('images', 5),postProduct)
 router.delete("/:product_id",auth,deleteProduct)
 router.put("/update",auth,updateProduct)

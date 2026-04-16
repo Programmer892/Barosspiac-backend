@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs"
 import jwt from "jsonwebtoken"
 import dotenv, { decrypt } from "dotenv"
 import cloudinary from "../config/cloudinary.js"
-import { error } from "console"
+import { error, log } from "console"
 dotenv.config()
 
 
@@ -139,6 +139,21 @@ const getUser = async (req, res) => {
     }
 }
 
+const getAllUser = async (req, res) => {
+    
+    try {
+        const [rows] = await pool.query("SELECT user_id,fullname,email,userClass,created_at,role,verified FROM users ");
+        if (rows.length === 0) {
+            return res.status(404).json({ message: 'Felhasználó nem található' });
+        }
+        res.status(200).json(rows);
+    }
+    catch (error) {
+        console.log(error)
+        return res.status(500).json({ message: 'Szerver hiba', error: error.message });
+    }
+}
+
 
 const updateUser = async (req, res) => {
     const user_id = req.user.user_id;
@@ -259,7 +274,7 @@ const deletePfp = async (req, res) => {
 
 
 
-export { userRegister, userLogin, logout, userDelete, getUser, updateUser, userallInformation, updatePassword, updateNotifications, updatePfp, deletePfp }
+export { userRegister, userLogin, logout, userDelete, getUser, updateUser, userallInformation, updatePassword, updateNotifications, updatePfp, deletePfp,getAllUser }
 
 
 
