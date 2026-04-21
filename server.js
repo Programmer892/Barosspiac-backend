@@ -114,6 +114,6 @@ app.use((req, res) => {
 
 
 
-server.listen(PORT, HOST, () => {
-    console.log(`A szerver fut: http://${HOST}:${PORT}`);
+server.listen(PORT, () => {
+    console.log(`A szerver fut: http://localhost:${PORT}`);
 })
