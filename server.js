@@ -22,7 +22,11 @@ import { createNotification } from "./utils/notifications.js"
 const app = express()
 const server = createServer(app)
 const io = new Server(server, {
-    cors: { origin: "*" }
+    cors: {
+        origin: "http://localhost:5173",
+        methods: ["GET", "POST"],
+        allowedHeaders: ["my-custom-header"],
+    }
 })
 
 
