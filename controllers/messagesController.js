@@ -26,16 +26,20 @@ const getMessages = async (req, res) => {
 
 const getUnreadedMessages = async (req, res) => {
     const user_id = req.user.user_id
-    //console.log(user_id);
-    
-    try {
 
+    try {
         const [messages] = await pool.query(
-              `SELECT conversations_id, COUNT(*) as unread_count
-                FROM messages
-                WHERE sender_id != ?
-                AND read_at IS NULL 
-                GROUP BY conversations_id;`, [user_id])
+            `SELECT 
+                m.conversations_id, 
+                COUNT(*) as unread_count
+             FROM messages m
+             JOIN conversations c ON c.conversations_id = m.conversations_id
+             WHERE m.sender_id != ?
+             AND m.read_at IS NULL
+             AND (c.user1_id = ? OR c.user2_id = ?)
+             GROUP BY m.conversations_id`,
+            [user_id, user_id, user_id]
+        )
 
         return res.status(200).json(messages)
 
@@ -53,7 +57,7 @@ const markMessagesAsRead = async (req, res) => {
         
         const [result] = await pool.query(
             `UPDATE messages
-             SET read_at = NOW(), message_status = 'Olvasva'
+             SET read_at = NOW(), message_state = 'Olvasva'
              WHERE conversations_id = ?
              AND sender_id != ?
              AND read_at IS NULL`, [conversations_id, user_id]
@@ -62,6 +66,7 @@ const markMessagesAsRead = async (req, res) => {
        return res.status(200).json({ message: `${result.affectedRows} üzenet olvasottként jelölve` })
 
     } catch (error) {
+            console.log(error);
             return res.status(500).json({ message: 'Szerver hiba', error: error.message })      
     }
 

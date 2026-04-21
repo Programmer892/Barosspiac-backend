@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken"
 import dotenv, { decrypt } from "dotenv"
 import cloudinary from "../config/cloudinary.js"
 import { error, log } from "console"
+import { sendVerificationEmail } from "../utils/sendVerificationEmail.js"
 dotenv.config()
 
 
@@ -32,12 +33,50 @@ async function userRegister(req, res) {
 
         const hashedpsw = await bcrypt.hash(psw, 10)
 
-        await pool.query("INSERT INTO `users` (`user_id`, `pfp`, `email`, `psw`, `fullname`, `userClass`, `role`, `verified`, `created_at`) VALUES (NULL,NULL, ?, ?, ?, ?, 'regisztralt', '0', current_timestamp())", [email, hashedpsw, fullname, userClass])
-
-        return res.status(200).json({ message: "Sikeres regisztráció" })
+        const [result] = await pool.query("INSERT INTO `users` (`user_id`, `pfp`, `email`, `psw`, `fullname`, `userClass`, `role`, `verified`, `created_at`) VALUES (NULL,NULL, ?, ?, ?, ?, 'regisztralt', '0', current_timestamp())", [email, hashedpsw, fullname, userClass])
+        await sendVerificationEmail(result.insertId, email)
+        return res.status(201).json({ message: "Sikeres regisztráció" })
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: "Szerver hiba", error: error.message })
+    }
+}
+
+async function verifyEmail(req, res){
+    const { token } = req.query
+
+    try {
+      
+        const [rows] = await pool.query(
+            'SELECT * FROM email_verifications WHERE token = ?',
+            [token]
+        )
+
+        if (rows.length === 0) {
+            return res.status(400).json({ message: 'Érvénytelen token' })
+        }
+
+        const verification = rows[0]
+
+    
+        if (new Date() > new Date(verification.expires_at)) {
+            await pool.query('DELETE FROM email_verifications WHERE token = ?', [token])
+            return res.status(400).json({ message: 'A token lejárt' })
+        }
+
+        
+        await pool.query(
+            'UPDATE users SET verified = 1 WHERE user_id = ?',
+            [verification.user_id]
+        )
+
+       
+        await pool.query('DELETE FROM email_verifications WHERE token = ?', [token])
+
+        res.json({ message: 'Email sikeresen megerősítve' })
+
+    } catch (error) {
+        res.status(500).json({ message: 'Szerver hiba', error: error.message })
     }
 }
 
@@ -274,7 +313,7 @@ const deletePfp = async (req, res) => {
 
 
 
-export { userRegister, userLogin, logout, userDelete, getUser, updateUser, userallInformation, updatePassword, updateNotifications, updatePfp, deletePfp,getAllUser }
+export { userRegister, userLogin, logout, userDelete, getUser, updateUser, userallInformation, updatePassword, updateNotifications, updatePfp, deletePfp,getAllUser, verifyEmail }
 
 
 

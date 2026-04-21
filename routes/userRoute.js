@@ -1,5 +1,5 @@
 import express from "express"
-import {userRegister,userLogin, logout, userDelete, getUser, updateUser, userallInformation, updatePassword, updateNotifications, updatePfp, deletePfp, getAllUser} from "../controllers/userController.js"
+import {userRegister,userLogin, logout, userDelete, getUser, updateUser, userallInformation, updatePassword, updateNotifications, updatePfp, deletePfp, getAllUser, verifyEmail} from "../controllers/userController.js"
 import auth from "../middleware/authMiddleware.js"
 import admin from "../middleware/adminMiddleware.js"
 import multer from 'multer'
@@ -21,6 +21,7 @@ router.put("/notification",auth,updateNotifications)
 router.post("/profile_pic",auth,upload.single('profilePic'),updatePfp)
 router.delete("/profile_pic",auth,deletePfp)
 router.get('/alluser',auth,getAllUser)
+router.get('/verify-email', verifyEmail)
 
 
 export default router

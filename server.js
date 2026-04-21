@@ -16,7 +16,7 @@ import { Server } from "socket.io"
 import statisticRoute from "./routes/statisticRoute.js"
 import db from "./config/db.js"
 import notificationRoute from "./routes/notificationRoute.js"
-import {createNotification} from "./utils/notifications.js"
+import { createNotification } from "./utils/notifications.js"
 
 
 const app = express()
@@ -35,12 +35,12 @@ io.on('connection', (socket) => {
     })
 
     socket.on('send_message', async (data) => {
-        const { conversation_id, sender_id, message, message_state, sended_id } = data
+        const { conversation_id, sender_id, message, sended_id } = data
 
         try {
             const [result] = await db.query(
                 'INSERT INTO messages (conversations_id, sender_id, message, message_state) VALUES (?, ?, ?, ?)',
-                [conversation_id, sender_id, message, message_state]
+                [conversation_id, sender_id, message, 'Elküldve']
             )
 
             const newMessage = {
@@ -48,11 +48,11 @@ io.on('connection', (socket) => {
                 conversation_id,
                 sender_id,
                 message,
-                message_state,
+                message_status: 'Elküldve',
                 sent_at: new Date()
             }
 
-            await createNotification(sended_id, 'new_message', 'Új üzeneted érkezett', "/messages")
+            await createNotification(sended_id, 'new_message', 'Új üzeneted érkezett', '/messages')
 
             io.to(String(conversation_id)).emit('receive_message', newMessage)
 
@@ -88,33 +88,32 @@ const HOST = process.env.HOST
 
 app.use(express.json())
 
-app.use(cors({origin: "*"}))
+app.use(cors({ origin: "*" }))
 
 
-app.use("/api/user",userRoute)
-app.use("/api/product",productRoute)
-app.use("/api/category",categoryRoute)
-app.use("/api/ratings",ratingsRoute)
-app.use("/api/likes",likeRoute)
-app.use("/api/reports",reportRoute)
-app.use("/api/conversations",conversationRoute)
-app.use("/api/orders",orderRoute)
-app.use("/api/messages",messagesRoute)
-app.use("/api/statistics",statisticRoute)
-app.use("/api/notifications",notificationRoute)
-
-
-
-
-app.use((req,res) => 
-    {
-        res.status(404).json({error: "Az oldal nem található"})
-    })
+app.use("/api/user", userRoute)
+app.use("/api/product", productRoute)
+app.use("/api/category", categoryRoute)
+app.use("/api/ratings", ratingsRoute)
+app.use("/api/likes", likeRoute)
+app.use("/api/reports", reportRoute)
+app.use("/api/conversations", conversationRoute)
+app.use("/api/orders", orderRoute)
+app.use("/api/messages", messagesRoute)
+app.use("/api/statistics", statisticRoute)
+app.use("/api/notifications", notificationRoute)
 
 
 
 
+app.use((req, res) => {
+    res.status(404).json({ error: "Az oldal nem található" })
+})
 
-server.listen(PORT,HOST,() => {
+
+
+
+
+server.listen(PORT, HOST, () => {
     console.log(`A szerver fut: http://${HOST}:${PORT}`);
 })
