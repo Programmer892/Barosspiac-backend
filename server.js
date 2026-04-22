@@ -23,7 +23,7 @@ const app = express()
 const server = createServer(app)
 export const io = new Server(server, {
     cors: {
-        origin: "http://localhost:5173",
+        origin: ['http://localhost:5173', 'https://barosspiac.netlify.app/'],
         methods: ["GET", "POST"],
         allowedHeaders: ["my-custom-header"],
     }
@@ -122,7 +122,7 @@ const HOST = process.env.HOST
 
 app.use(express.json())
 
-app.use(cors({ origin: "*" }))
+app.use(cors({ origin: ['http://localhost:5173', 'https://barosspiac.netlify.app/'] }))
 
 
 app.use("/api/user", userRoute)
