@@ -21,7 +21,7 @@ import { createNotification } from "./utils/notifications.js"
 
 const app = express()
 const server = createServer(app)
-const io = new Server(server, {
+export const io = new Server(server, {
     cors: {
         origin: "http://localhost:5173",
         methods: ["GET", "POST"],
@@ -40,26 +40,34 @@ io.on('connection', (socket) => {
 
     socket.on('send_message', async (data) => {
         const { conversation_id, sender_id, message, sended_id } = data
-
+    
         try {
             const [result] = await db.query(
-                'INSERT INTO messages (conversations_id, sender_id, message, message_state) VALUES (?, ?, ?, ?)',
+                'INSERT INTO messages (conversations_id, sender_id, message, message_status) VALUES (?, ?, ?, ?)',
                 [conversation_id, sender_id, message, 'Elküldve']
             )
-
+    
+          
+            const [userResult] = await db.query(
+                'SELECT fullname, pfp FROM users WHERE user_id = ?',
+                [sender_id]
+            )
+    
             const newMessage = {
                 message_id: result.insertId,
                 conversation_id,
                 sender_id,
                 message,
                 message_status: 'Elküldve',
-                sent_at: new Date()
+                sent_at: new Date(),
+                fullname: userResult[0].fullname,  
+                pfp: userResult[0].pfp           
             }
-
+    
             await createNotification(sended_id, 'new_message', 'Új üzeneted érkezett', '/messages')
-
+    
             io.to(String(conversation_id)).emit('receive_message', newMessage)
-
+    
         } catch (err) {
             console.error('Üzenet mentési hiba:', err)
             socket.emit('error', { message: 'Üzenet küldése sikertelen' })
@@ -76,12 +84,34 @@ io.on('connection', (socket) => {
             socket.emit('error', { message: 'Üzenet törlése sikertelen' })
         }
     })
+    
+    socket.on('mark_as_read', async ({ conversation_id, user_id }) => {
+        try {
+            await db.query(
+                `UPDATE messages 
+             SET read_at = NOW(), message_status = 'Olvasva'
+             WHERE conversations_id = ?
+             AND sender_id != ?
+             AND read_at IS NULL`,
+                [conversation_id, user_id]
+            )
+
+      
+            io.to(String(conversation_id)).emit('messages_read', {
+                conversation_id: Number(conversation_id)
+            })
+        } catch (err) {
+            console.error('Olvasás jelölési hiba:', err)
+        }
+    })
 
 
     socket.on('disconnect', () => {
         console.log('Lecsatlakozott:', socket.id)
     })
 })
+
+
 
 dotenv.config()
 

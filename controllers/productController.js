@@ -260,42 +260,69 @@ async function deleteProduct(req, res) {
 
 
 const updateProduct = async (req, res) => {
-
-    const { user_id } = req.body;
-    //console.log(user_id);
-
-
-
-    const { product_id, product_title, product_desc, product_price, product_condition, product_collpoint, product_size, product_subject, product_class, category_id, sub_category_id, sub_sub_category_id, is_sold } = req.body;
-
-    //console.log(product_id);
-
+    const user_id = req.user.user_id  
+    const { title, desc, price, condition, size, subject, collpoint, category_id, sub_category_id, sub_sub_category_id, product_id } = req.body;
+    console.log(product_id);
     try {
+
+
+
 
         const [ownerCheck] = await pool.query(
             "SELECT product_id, user_id FROM product WHERE product_id = ?",
             [product_id]
-        );
+        )
 
         if (ownerCheck.length === 0) {
-            return res.status(404).json({ message: 'Termék nem található' });
+            return res.status(404).json({ message: 'Termék nem található' })
         }
 
         if (ownerCheck[0].user_id !== user_id) {
-            return res.status(403).json({ message: 'Nincs jogosultságod szerkeszteni ezt a terméket' });
+            return res.status(403).json({ message: 'Nincs jogosultságod' })
         }
 
+        
+        await pool.query(
+            `UPDATE product SET 
+                product_title = ?, product_desc = ?, product_price = ?,
+                product_condition = ?, product_collpoint = ?, product_size = ?,
+                product_subject = ?, category_id = ?, sub_category_id = ?,
+                sub_sub_category_id = ?
+             WHERE product_id = ?`,
+            [title, desc, price, condition,
+                collpoint, size || null, subject || null,
+                category_id, sub_category_id, sub_sub_category_id, product_id]
+        )
 
+        
+        if (req.files && req.files.length > 0) {
+    
+            await pool.query('DELETE FROM productimg WHERE product_id = ?', [product_id])
 
+           
+            for (const file of req.files) {
+                const result = await new Promise((resolve, reject) => {
+                    const stream = cloudinary.uploader.upload_stream(
+                        { folder: 'barosspiac' },
+                        (error, result) => error ? reject(error) : resolve(result)
+                    )
+                    stream.end(file.buffer)
+                })
 
-        const [result] = await pool.query("UPDATE `product` SET `product_title` = ?, `product_desc` = ?, `product_price` = ?, `product_condition` = ?, `product_collpoint` = ?, `product_size` = ?, `product_subject` = ?, `product_class` = ?, `category_id` = ?, `sub_category_id` = ?, `sub_sub_category_id` = ?, `is_sold` = ? WHERE `product`.`product_id` = ?", [product_title, product_desc, product_price, product_condition, product_collpoint, product_size, product_subject, product_class, category_id, sub_category_id, sub_sub_category_id, is_sold, product_id]);
+                await pool.query(
+                    'INSERT INTO productimg (product_id, product_img) VALUES (?, ?)',
+                    [product_id, result.secure_url]
+                )
+            }
+        }
 
+        res.status(200).json({ message: 'Sikeres változtatás' })
 
-        res.status(201).json({ message: 'Sikeres változtatás' });
     } catch (error) {
-        res.status(500).json({ message: "Szerverhiba", error: error.message });
+        console.log(error);
+        res.status(500).json({ message: 'Szerverhiba', error: error.message })
     }
-};
+}
 
 const getProductbyid = async (req, res) => {
 

@@ -1,5 +1,5 @@
 import pool from "../config/db.js"
-
+import { io } from '../server.js'  
 
 
 const getMessages = async (req, res) => {
@@ -9,7 +9,8 @@ const getMessages = async (req, res) => {
         const [messages] = await pool.query(
             `SELECT 
                 m.*,
-                u.fullname
+                u.fullname,
+                u.pfp
              FROM messages m
              JOIN users u ON m.sender_id = u.user_id
              WHERE m.conversations_id = ?
@@ -57,12 +58,13 @@ const markMessagesAsRead = async (req, res) => {
         
         const [result] = await pool.query(
             `UPDATE messages
-             SET read_at = NOW(), message_state = 'Olvasva'
+             SET read_at = NOW(), message_status = 'Olvasva'
              WHERE conversations_id = ?
              AND sender_id != ?
              AND read_at IS NULL`, [conversations_id, user_id]
         )
         
+        io.to(String(conversations_id)).emit('messages_read', { conversation_id: Number(conversations_id) })
        return res.status(200).json({ message: `${result.affectedRows} üzenet olvasottként jelölve` })
 
     } catch (error) {
