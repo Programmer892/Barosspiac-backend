@@ -13,10 +13,30 @@
 ---
 
 ## Fejlesztési környezet
-- Node.js
-- Express.js
-- MySQL
 
+### Backend
+- Node.js
+- Express.js (REST API)
+- Socket.IO (valós idejű kommunikáció)
+- JWT (autentikáció)
+- bcryptjs (jelszó titkosítás)
+- dotenv (környezeti változók)
+- cors (CORS kezelés)
+
+### Adatbázis
+- MySQL
+- mysql2 (Node.js driver)
+
+### Fájlkezelés
+- Multer (file upload)
+- Cloudinary (képtárolás)
+
+### Email
+- Nodemailer (email küldés)
+
+### Fejlesztői eszközök
+- Nodemon 
+- Postman 
 ---
 
 ## Adatbázis
