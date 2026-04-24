@@ -386,20 +386,12 @@ router.put("/updaterating/:rating_id", auth, updateRating)
 
 ---
 
-## Tesztelés
-
-> Tesztek Postmanben futtatva
-
-- Postman collection: `barosspiac.postman_collection.json`
-
-![Postman teszt](https://i.snipboard.io/qY6Vg0.jpg)
-
 ---
 
 ## Frontend
 
 - [GitHub repo](https://github.com/s4nyi324145/barosspiac)
-- [Live demo](https://barosspiac.netlify.app)
+- [Netlify](https://barosspiac.netlify.app)
 
 ---
 
