@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken"
 import dotenv, { decrypt } from "dotenv"
 import cloudinary from "../config/cloudinary.js"
 import { error, log } from "console"
+
 dotenv.config()
 
 
@@ -32,14 +33,18 @@ async function userRegister(req, res) {
 
         const hashedpsw = await bcrypt.hash(psw, 10)
 
-        await pool.query("INSERT INTO `users` (`user_id`, `pfp`, `email`, `psw`, `fullname`, `userClass`, `role`, `verified`, `created_at`) VALUES (NULL,NULL, ?, ?, ?, ?, 'regisztralt', '0', current_timestamp())", [email, hashedpsw, fullname, userClass])
-
-        return res.status(200).json({ message: "Sikeres regisztráció" })
+        const [result] = await pool.query("INSERT INTO `users` (`user_id`, `pfp`, `email`, `psw`, `fullname`, `userClass`, `role`, `verified`, `created_at`) VALUES (NULL,NULL, ?, ?, ?, ?, 'regisztralt', '0', current_timestamp())", [email, hashedpsw, fullname, userClass])
+   
+        return res.status(201).json({ message: "Sikeres regisztráció" })
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: "Szerver hiba", error: error.message })
     }
 }
+
+
+
+
 
 
 async function userallInformation(req, res) {
@@ -80,7 +85,7 @@ async function userLogin(req, res) {
             return res.status(400).json({ message: 'Hibás email vagy jelszó', errorField: ['email', 'psw'] });
         }
         console.log(process.env.JWT_SECRET);
-        const token = jwt.sign({ id: user.user_id, name: user.fullname }, process.env.JWT_SECRET, { expiresIn: '7d' });
+        const token = jwt.sign({ id: user.user_id, name: user.fullname , role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
         res.status(200).json({ message: 'Sikeres bejelentkezés', token, user });
 
     }
@@ -140,17 +145,28 @@ const getUser = async (req, res) => {
 }
 
 const getAllUser = async (req, res) => {
-    
+    const page = Number(req.query.page) || 1
+    const limit = 10
+    const offset = (page - 1) * limit
+
     try {
-        const [rows] = await pool.query("SELECT user_id,fullname,email,userClass,created_at,role,verified FROM users ");
-        if (rows.length === 0) {
-            return res.status(404).json({ message: 'Felhasználó nem található' });
-        }
-        res.status(200).json(rows);
-    }
-    catch (error) {
-        console.log(error)
-        return res.status(500).json({ message: 'Szerver hiba', error: error.message });
+        const [rows] = await pool.query(
+            "SELECT user_id, fullname, email, userClass, created_at, role,pfp, verified FROM users ORDER BY user_id DESC LIMIT ? OFFSET ? ",
+            [limit, offset]
+        )
+        const [[{ total }]] = await pool.query("SELECT COUNT(*) as total FROM users")
+
+        const [latests] = await pool.query("SELECT * FROM users ORDER BY created_at DESC LIMIT 5")
+
+        res.status(200).json({
+            users: rows,
+            latests,
+            total,
+            totalPages: Math.ceil(total / limit),
+            currentPage: page
+        })
+    } catch (error) {
+        res.status(500).json({ message: 'Szerver hiba', error: error.message })
     }
 }
 
@@ -270,11 +286,36 @@ const deletePfp = async (req, res) => {
 }
 
 
+const deleteUser = async (req, res) => {
+    const { user_id } = req.params
+    try {
+        await pool.query('DELETE FROM users WHERE user_id = ?', [user_id])
+        res.status(200).json({ message: 'Felhasználó törölve' })
+    } catch (error) {
+        res.status(500).json({ message: 'Szerver hiba', error: error.message })
+    }
+}
+
+const updateUserAdmin = async (req, res) => {
+    const { user_id } = req.params
+    const { fullname, email, userClass, role, verified } = req.body
+    try {
+        await pool.query(
+            'UPDATE users SET fullname = ?, email = ?, userClass = ?, role = ?, verified = ? WHERE user_id = ?',
+            [fullname, email, userClass, role, verified, user_id]
+        )
+        res.status(200).json({ message: 'Felhasználó frissítve' })
+    } catch (error) {
+        res.status(500).json({ message: 'Szerver hiba', error: error.message })
+    }
+}
 
 
 
 
-export { userRegister, userLogin, logout, userDelete, getUser, updateUser, userallInformation, updatePassword, updateNotifications, updatePfp, deletePfp,getAllUser }
+
+
+export { userRegister, userLogin, logout, userDelete, getUser, updateUser, userallInformation, updatePassword, updateNotifications, updatePfp, deletePfp,getAllUser, deleteUser, updateUserAdmin }
 
 
 

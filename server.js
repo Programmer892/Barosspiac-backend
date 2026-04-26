@@ -16,13 +16,17 @@ import { Server } from "socket.io"
 import statisticRoute from "./routes/statisticRoute.js"
 import db from "./config/db.js"
 import notificationRoute from "./routes/notificationRoute.js"
-import {createNotification} from "./utils/notifications.js"
+import { createNotification } from "./utils/notifications.js"
 
 
 const app = express()
 const server = createServer(app)
-const io = new Server(server, {
-    cors: { origin: "*" }
+export const io = new Server(server, {
+    cors: {
+        origin: ['http://localhost:5173', 'https://barosspiac.netlify.app'],
+        methods: ["GET", "POST"],
+        allowedHeaders: ["my-custom-header"],
+    }
 })
 
 
@@ -35,27 +39,35 @@ io.on('connection', (socket) => {
     })
 
     socket.on('send_message', async (data) => {
-        const { conversation_id, sender_id, message, message_state, sended_id } = data
-
+        const { conversation_id, sender_id, message, sended_id } = data
+    
         try {
             const [result] = await db.query(
-                'INSERT INTO messages (conversations_id, sender_id, message, message_state) VALUES (?, ?, ?, ?)',
-                [conversation_id, sender_id, message, message_state]
+                'INSERT INTO messages (conversations_id, sender_id, message, message_status) VALUES (?, ?, ?, ?)',
+                [conversation_id, sender_id, message, 'Elküldve']
             )
-
+    
+          
+            const [userResult] = await db.query(
+                'SELECT fullname, pfp FROM users WHERE user_id = ?',
+                [sender_id]
+            )
+    
             const newMessage = {
                 message_id: result.insertId,
                 conversation_id,
                 sender_id,
                 message,
-                message_state,
-                sent_at: new Date()
+                message_status: 'Elküldve',
+                sent_at: new Date(),
+                fullname: userResult[0].fullname,  
+                pfp: userResult[0].pfp           
             }
-
-            await createNotification(sended_id, 'new_message', 'Új üzeneted érkezett', "/messages")
-
+    
+            await createNotification(sended_id, 'new_message', 'Új üzeneted érkezett', '/messages')
+    
             io.to(String(conversation_id)).emit('receive_message', newMessage)
-
+    
         } catch (err) {
             console.error('Üzenet mentési hiba:', err)
             socket.emit('error', { message: 'Üzenet küldése sikertelen' })
@@ -72,12 +84,34 @@ io.on('connection', (socket) => {
             socket.emit('error', { message: 'Üzenet törlése sikertelen' })
         }
     })
+    
+    socket.on('mark_as_read', async ({ conversation_id, user_id }) => {
+        try {
+            await db.query(
+                `UPDATE messages 
+             SET read_at = NOW(), message_status = 'Olvasva'
+             WHERE conversations_id = ?
+             AND sender_id != ?
+             AND read_at IS NULL`,
+                [conversation_id, user_id]
+            )
+
+      
+            io.to(String(conversation_id)).emit('messages_read', {
+                conversation_id: Number(conversation_id)
+            })
+        } catch (err) {
+            console.error('Olvasás jelölési hiba:', err)
+        }
+    })
 
 
     socket.on('disconnect', () => {
         console.log('Lecsatlakozott:', socket.id)
     })
 })
+
+
 
 dotenv.config()
 
@@ -88,33 +122,32 @@ const HOST = process.env.HOST
 
 app.use(express.json())
 
-app.use(cors({origin: "*"}))
+app.use(cors({ origin: ['http://localhost:5173', 'https://barosspiac.netlify.app'] }))
 
 
-app.use("/api/user",userRoute)
-app.use("/api/product",productRoute)
-app.use("/api/category",categoryRoute)
-app.use("/api/ratings",ratingsRoute)
-app.use("/api/likes",likeRoute)
-app.use("/api/reports",reportRoute)
-app.use("/api/conversations",conversationRoute)
-app.use("/api/orders",orderRoute)
-app.use("/api/messages",messagesRoute)
-app.use("/api/statistics",statisticRoute)
-app.use("/api/notifications",notificationRoute)
-
-
-
-
-app.use((req,res) => 
-    {
-        res.status(404).json({error: "Az oldal nem található"})
-    })
+app.use("/api/user", userRoute)
+app.use("/api/product", productRoute)
+app.use("/api/category", categoryRoute)
+app.use("/api/ratings", ratingsRoute)
+app.use("/api/likes", likeRoute)
+app.use("/api/reports", reportRoute)
+app.use("/api/conversations", conversationRoute)
+app.use("/api/orders", orderRoute)
+app.use("/api/messages", messagesRoute)
+app.use("/api/statistics", statisticRoute)
+app.use("/api/notifications", notificationRoute)
 
 
 
 
+app.use((req, res) => {
+    res.status(404).json({ error: "Az oldal nem található" })
+})
 
-server.listen(PORT,HOST,() => {
-    console.log(`A szerver fut: http://${HOST}:${PORT}`);
+
+
+
+
+server.listen(PORT, () => {
+    console.log(`A szerver fut: http://localhost:${PORT}`);
 })

@@ -4,6 +4,7 @@ import cloudinary from "../config/cloudinary.js"
 
 
 
+
 dotenv.config()
 
 
@@ -149,34 +150,89 @@ const getProduct2 = async (req, res) => {
 }
 
 const getAllProduct = async (req, res) => {
-
-
     try {
-        const [response] = await pool.query(`SELECT 
-    product.product_id,
-    product.product_title,
-    main_categories.category_name,
-    sub_category.sub_category_name,
-    subsubcategory.sub_sub_name,
-    users.fullname,
-    product.product_upload,
-    product.status,
-    product.is_sold
-    FROM product
-    INNER JOIN main_categories ON main_categories.category_id = product.category_id
-    INNER JOIN sub_category ON sub_category.sub_category_id = product.sub_category_id
-    INNER JOIN subsubcategory ON subsubcategory.sub_sub_category_id = product.sub_sub_category_id
-    INNER JOIN users ON users.user_id = product.user_id
-    ORDER BY product.product_upload DESC;`);
+        const page = Number(req.query.page) || 1
+        const limit = 10
+        const offset = (page - 1) * limit
 
-        res.status(200).json(response);
+        const [response] = await pool.query(`
+            SELECT 
+                product.product_id,
+                product.product_title,
+                main_categories.category_name,
+                sub_category.sub_category_name,
+                subsubcategory.sub_sub_name,
+                users.fullname,
+                users.pfp,
+                product.product_upload,
+                product.status,
+                product.is_sold
+            FROM product
+            INNER JOIN main_categories ON main_categories.category_id = product.category_id
+            INNER JOIN sub_category ON sub_category.sub_category_id = product.sub_category_id
+            INNER JOIN subsubcategory ON subsubcategory.sub_sub_category_id = product.sub_sub_category_id
+            INNER JOIN users ON users.user_id = product.user_id
+            ORDER BY product.product_upload DESC 
+            LIMIT ? OFFSET ?
+        `, [limit, offset])
 
-    }
-    catch (error) {
-        return res.status(500).json({ message: 'Szerver hiba', error: error.message });
+        const [latests] = await pool.query(`
+            SELECT 
+                product.product_id,
+                product.product_title,
+                main_categories.category_name,
+                sub_category.sub_category_name,
+                subsubcategory.sub_sub_name,
+                users.fullname,
+                users.pfp,
+                product.product_upload,
+                product.status,
+                product.is_sold
+            FROM product
+            INNER JOIN main_categories ON main_categories.category_id = product.category_id
+            INNER JOIN sub_category ON sub_category.sub_category_id = product.sub_category_id
+            INNER JOIN subsubcategory ON subsubcategory.sub_sub_category_id = product.sub_sub_category_id
+            INNER JOIN users ON users.user_id = product.user_id
+            ORDER BY product.product_upload DESC 
+            LIMIT 5
+        `)
+
+        const [[{ total }]] = await pool.query("SELECT COUNT(*) as total FROM product")
+
+        res.status(200).json({
+            products: response,
+            latests,
+            total,
+            totalPages: Math.ceil(total / limit),
+            currentPage: page
+        })
+
+    } catch (error) {
+        res.status(500).json({ message: 'Szerver hiba', error: error.message })
     }
 }
 
+
+const adminUpdateProduct = async (req, res) => {
+    const { product_id } = req.params
+    const { product_title, category_id, sub_category_id, sub_sub_category_id, is_sold } = req.body
+
+    try {
+        await pool.query(
+            `UPDATE product SET 
+                product_title = ?,
+                category_id = ?,
+                sub_category_id = ?,
+                sub_sub_category_id = ?,
+                is_sold = ?
+             WHERE product_id = ?`,
+            [product_title, category_id, sub_category_id, sub_sub_category_id, is_sold, product_id]
+        )
+        res.status(200).json({ message: 'Termék frissítve' })
+    } catch (error) {
+        res.status(500).json({ message: 'Szerver hiba', error: error.message })
+    }
+}
 
 async function postProduct(req, res) {
     try {
@@ -237,6 +293,9 @@ async function postProduct(req, res) {
 async function deleteProduct(req, res) {
     const { product_id } = req.params
     const user_id = req.user.user_id
+    console.log(req.user);
+    
+    const isAdmin = req.user.role === 'admin'
 
     try {
         const [ownerCheck] = await pool.query(
@@ -248,9 +307,12 @@ async function deleteProduct(req, res) {
             return res.status(404).json({ message: 'Termék nem található' });
         }
 
-        if (ownerCheck[0].user_id !== user_id) {
-            return res.status(403).json({ message: 'Nincs jogosultságod törölni ezt a terméket' });
+        if (!isAdmin && ownerCheck[0].user_id !== user_id) {
+            return res.status(403).json({ message: 'Nincs jogosultságod' })
         }
+
+        await pool.query("DELETE FROM product WHERE product_id = ?", [product_id])
+
         res.status(204).json({ message: 'Termék sikeresen törölve' });
     } catch (error) {
         res.status(500).json({ message: "Szerver hiba", error: error.message })
@@ -260,42 +322,69 @@ async function deleteProduct(req, res) {
 
 
 const updateProduct = async (req, res) => {
-
-    const { user_id } = req.body;
-    //console.log(user_id);
-
-
-
-    const { product_id, product_title, product_desc, product_price, product_condition, product_collpoint, product_size, product_subject, product_class, category_id, sub_category_id, sub_sub_category_id, is_sold } = req.body;
-
-    //console.log(product_id);
-
+    const user_id = req.user.user_id  
+    const { title, desc, price, condition, size, subject, collpoint, category_id, sub_category_id, sub_sub_category_id, product_id } = req.body;
+    console.log(product_id);
     try {
+
+
+
 
         const [ownerCheck] = await pool.query(
             "SELECT product_id, user_id FROM product WHERE product_id = ?",
             [product_id]
-        );
+        )
 
         if (ownerCheck.length === 0) {
-            return res.status(404).json({ message: 'Termék nem található' });
+            return res.status(404).json({ message: 'Termék nem található' })
         }
 
         if (ownerCheck[0].user_id !== user_id) {
-            return res.status(403).json({ message: 'Nincs jogosultságod szerkeszteni ezt a terméket' });
+            return res.status(403).json({ message: 'Nincs jogosultságod' })
         }
 
+        
+        await pool.query(
+            `UPDATE product SET 
+                product_title = ?, product_desc = ?, product_price = ?,
+                product_condition = ?, product_collpoint = ?, product_size = ?,
+                product_subject = ?, category_id = ?, sub_category_id = ?,
+                sub_sub_category_id = ?
+             WHERE product_id = ?`,
+            [title, desc, price, condition,
+                collpoint, size || null, subject || null,
+                category_id, sub_category_id, sub_sub_category_id, product_id]
+        )
 
+        
+        if (req.files && req.files.length > 0) {
+    
+            await pool.query('DELETE FROM productimg WHERE product_id = ?', [product_id])
 
+           
+            for (const file of req.files) {
+                const result = await new Promise((resolve, reject) => {
+                    const stream = cloudinary.uploader.upload_stream(
+                        { folder: 'barosspiac' },
+                        (error, result) => error ? reject(error) : resolve(result)
+                    )
+                    stream.end(file.buffer)
+                })
 
-        const [result] = await pool.query("UPDATE `product` SET `product_title` = ?, `product_desc` = ?, `product_price` = ?, `product_condition` = ?, `product_collpoint` = ?, `product_size` = ?, `product_subject` = ?, `product_class` = ?, `category_id` = ?, `sub_category_id` = ?, `sub_sub_category_id` = ?, `is_sold` = ? WHERE `product`.`product_id` = ?", [product_title, product_desc, product_price, product_condition, product_collpoint, product_size, product_subject, product_class, category_id, sub_category_id, sub_sub_category_id, is_sold, product_id]);
+                await pool.query(
+                    'INSERT INTO productimg (product_id, product_img) VALUES (?, ?)',
+                    [product_id, result.secure_url]
+                )
+            }
+        }
 
+        res.status(200).json({ message: 'Sikeres változtatás' })
 
-        res.status(201).json({ message: 'Sikeres változtatás' });
     } catch (error) {
-        res.status(500).json({ message: "Szerverhiba", error: error.message });
+        console.log(error);
+        res.status(500).json({ message: 'Szerverhiba', error: error.message })
     }
-};
+}
 
 const getProductbyid = async (req, res) => {
 
@@ -377,6 +466,7 @@ const markAsSold = async (req, res) => {
     const { product_id } = req.params
     const { is_sold } = req.body
     const user_id = req.user.user_id
+     const isAdmin = req.user.role === 'admin'   
 
     try {
 
@@ -389,8 +479,8 @@ const markAsSold = async (req, res) => {
             return res.status(404).json({ message: 'Termék nem található' });
         }
 
-        if (ownerCheck[0].user_id !== user_id) {
-            return res.status(403).json({ message: 'Nincs jogosultságod szerkeszteni ezt a terméket' });
+         if (!isAdmin && ownerCheck[0].user_id !== user_id) {
+            return res.status(403).json({ message: 'Nincs jogosultságod' })
         }
 
 
@@ -412,5 +502,5 @@ const markAsSold = async (req, res) => {
 
 
 
-export { getProduct, postProduct, deleteProduct, updateProduct, getProduct2, getProductbyid, getSimilarProduct, getByuserProduct, getByuserSoldProduct, markAsSold,getAllProduct }
+export { getProduct, postProduct, deleteProduct, updateProduct, getProduct2, getProductbyid, getSimilarProduct, getByuserProduct, getByuserSoldProduct, markAsSold,getAllProduct, adminUpdateProduct }
 

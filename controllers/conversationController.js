@@ -9,6 +9,7 @@ const getConversation = async (req, res) => {
             `SELECT 
         c.*,
         CASE WHEN c.user1_id = ? THEN u2.fullname ELSE u1.fullname END AS fullname,
+        CASE WHEN c.user1_id = ? THEN u2.pfp ELSE u2.pfp END AS pfp,
         m.message,
         m.sent_at
      FROM conversations c
@@ -19,7 +20,7 @@ const getConversation = async (req, res) => {
      )
      WHERE c.user1_id = ? OR c.user2_id = ?
      ORDER BY m.sent_at DESC`,
-            [user_id, user_id, user_id]
+            [user_id, user_id, user_id,user_id]
         )
 
         res.status(200).json(response)

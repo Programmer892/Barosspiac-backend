@@ -11,7 +11,7 @@ const auth = async (req,res,next) =>
     }
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        const [rows] = await pool.query("SELECT user_id, email, psw FROM users WHERE user_id = ?", [decoded.id]);
+        const [rows] = await pool.query("SELECT user_id, email, psw, role FROM users WHERE user_id = ?", [decoded.user_id || decoded.id]);
         if (rows.length === 0) {
             return res.status(401).json({ message: 'Hibás token' });
         }

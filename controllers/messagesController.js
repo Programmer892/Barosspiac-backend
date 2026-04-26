@@ -1,5 +1,5 @@
 import pool from "../config/db.js"
-
+import { io } from '../server.js'  
 
 
 const getMessages = async (req, res) => {
@@ -9,7 +9,8 @@ const getMessages = async (req, res) => {
         const [messages] = await pool.query(
             `SELECT 
                 m.*,
-                u.fullname
+                u.fullname,
+                u.pfp
              FROM messages m
              JOIN users u ON m.sender_id = u.user_id
              WHERE m.conversations_id = ?
@@ -26,16 +27,20 @@ const getMessages = async (req, res) => {
 
 const getUnreadedMessages = async (req, res) => {
     const user_id = req.user.user_id
-    //console.log(user_id);
-    
-    try {
 
+    try {
         const [messages] = await pool.query(
-              `SELECT conversations_id, COUNT(*) as unread_count
-                FROM messages
-                WHERE sender_id != ?
-                AND read_at IS NULL 
-                GROUP BY conversations_id;`, [user_id])
+            `SELECT 
+                m.conversations_id, 
+                COUNT(*) as unread_count
+             FROM messages m
+             JOIN conversations c ON c.conversations_id = m.conversations_id
+             WHERE m.sender_id != ?
+             AND m.read_at IS NULL
+             AND (c.user1_id = ? OR c.user2_id = ?)
+             GROUP BY m.conversations_id`,
+            [user_id, user_id, user_id]
+        )
 
         return res.status(200).json(messages)
 
@@ -59,9 +64,11 @@ const markMessagesAsRead = async (req, res) => {
              AND read_at IS NULL`, [conversations_id, user_id]
         )
         
+        io.to(String(conversations_id)).emit('messages_read', { conversation_id: Number(conversations_id) })
        return res.status(200).json({ message: `${result.affectedRows} üzenet olvasottként jelölve` })
 
     } catch (error) {
+            console.log(error);
             return res.status(500).json({ message: 'Szerver hiba', error: error.message })      
     }
 

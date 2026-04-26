@@ -84,7 +84,7 @@ async function getRatingsByUser(req, res) {
 
     try {
 
-        const [result] = await pool.query("SELECT ratings.*,users.fullname FROM ratings INNER JOIN users ON users.user_id = ratings.rater_id WHERE rated_id = ? ORDER BY created_at DESC ", [rated_id]);
+        const [result] = await pool.query("SELECT ratings.*,users.fullname,users.pfp FROM ratings INNER JOIN users ON users.user_id = ratings.rater_id WHERE rated_id = ? ORDER BY created_at DESC ", [rated_id]);
 
         return res.status(200).json(result);
 
