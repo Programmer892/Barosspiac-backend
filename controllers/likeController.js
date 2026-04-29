@@ -1,44 +1,39 @@
-import pool from "../config/db.js"
-import dotenv from "dotenv"
+import pool from "../config/db.js";
+import dotenv from "dotenv";
 
 
+//Select the like state for a product
 async function getLikes(req, res) {
+  const user_id = req.user.user_id;
+  const { product_id } = req.params;
 
-    const user_id = req.user.user_id
-    const {product_id}  = req.params;
+  try {
+    const [result] = await pool.query(
+      `SELECT * FROM likes WHERE user_id = ? AND product_id = ?`,
+      [user_id, product_id],
+    );
+    console.log(result);
 
- 
-    try {
- 
-        const [result] = await pool.query(`SELECT * FROM likes WHERE user_id = ? AND product_id = ?`,[user_id,product_id]);
-        console.log(result);
-
-        if (result.length > 0) {
-            return res.status(200).json({liked: true})
-        }
-        else {
-            return res.status(200).json({liked: false})
-        }
- 
-       
-    } catch (error) {
-        console.log(error);
-        return res.status(500).json({ message: "Szerver hiba", error: error.message });
+    if (result.length > 0) {
+      return res.status(200).json({ liked: true });
+    } else {
+      return res.status(200).json({ liked: false });
     }
- }
+  } catch (error) {
+    console.log(error);
+    return res
+      .status(500)
+      .json({ message: "Szerver hiba", error: error.message });
+  }
+}
 
+//Get all liked products for the user
+async function getallLikes(req, res) {
+  const user_id = req.user.user_id;
 
-
- async function getallLikes(req, res) {
-
-    const user_id = req.user.user_id
- 
-    
- 
-    try {
-
- 
-        const [result] = await pool.query(`SELECT 
+  try {
+    const [result] = await pool.query(
+      `SELECT 
     product.*,
     productimg.product_img,
     main_categories.category_name,
@@ -57,78 +52,77 @@ async function getLikes(req, res) {
     LEFT JOIN productimg ON productimg.product_id = product.product_id
     WHERE l.user_id = ?
     GROUP BY product.product_id
-ORDER BY product.product_upload DESC`,[user_id, user_id]);
-        console.log(result);
+ORDER BY product.product_upload DESC`,
+      [user_id, user_id],
+    );
+    console.log(result);
 
-        res.status(200).json(result)
- 
-       
-    } catch (error) {
-        console.log(error);
-        return res.status(500).json({ message: "Szerver hiba", error: error.message });
-    }
- }
+    res.status(200).json(result);
+  } catch (error) {
+    console.log(error);
+    return res
+      .status(500)
+      .json({ message: "Szerver hiba", error: error.message });
+  }
+}
 
+//Delete the like state for the product
+async function deleteLike(req, res) {
+  const user_id = req.user.user_id;
+  const { product_id } = req.params;
 
- async function deleteLike(req, res) {
+  try {
+    const [result] = await pool.query(
+      `DELETE FROM likes WHERE likes.user_id = ? AND likes.product_id = ?`,
+      [user_id, product_id],
+    );
 
-    const user_id = req.user.user_id
-    const {product_id}  = req.params;
-
- 
-    try {
- 
-        const [result] = await pool.query(`DELETE FROM likes WHERE likes.user_id = ? AND likes.product_id = ?`,[user_id,product_id]);
-
-        res.status(200).json({message:"Sikeresen törölve a kedvencek közül"});
- 
-       
-    } catch (error) {
-        console.log(error);
-        return res.status(500).json({ message: "Szerver hiba", error: error.message });
-    }
- }
-
- async function deleteAllLike(req, res) {
-
-    const user_id = req.user.user_id
+    res.status(200).json({ message: "Sikeresen törölve a kedvencek közül" });
+  } catch (error) {
+    console.log(error);
+    return res
+      .status(500)
+      .json({ message: "Szerver hiba", error: error.message });
+  }
+}
 
 
- 
-    try {
- 
-        await pool.query(`DELETE FROM likes WHERE user_id = ? `,[user_id]);
+//Delete all likes for the user
+async function deleteAllLike(req, res) {
+  const user_id = req.user.user_id;
 
-        res.status(200).json({message:"Minden kedvelés sikeresen törölve"});
- 
-       
-    } catch (error) {
-        console.log(error);
-        return res.status(500).json({ message: "Szerver hiba", error: error.message });
-    }
- }
+  try {
+    await pool.query(`DELETE FROM likes WHERE user_id = ? `, [user_id]);
 
+    res.status(200).json({ message: "Minden kedvelés sikeresen törölve" });
+  } catch (error) {
+    console.log(error);
+    return res
+      .status(500)
+      .json({ message: "Szerver hiba", error: error.message });
+  }
+}
 
- async function postLikes(req, res) {
+//Add like for a product
+async function postLikes(req, res) {
+  const { product_id } = req.body;
+  const user_id = req.user.user_id;
 
-    
-    const {product_id}  = req.body;
-    const user_id = req.user.user_id
-   
- 
-    try {
- 
-        const [response] = await pool.query(`INSERT INTO likes (user_id, product_id) VALUES (?,?)`,[user_id,product_id]);
-       
+  try {
+    const [response] = await pool.query(
+      `INSERT INTO likes (user_id, product_id) VALUES (?,?)`,
+      [user_id, product_id],
+    );
 
+    return res
+      .status(200)
+      .json({ message: "Sikeresen hozzáadva a kedvencekhez" });
+  } catch (error) {
+    console.log(error);
+    return res
+      .status(500)
+      .json({ message: "Szerver hiba", error: error.message });
+  }
+}
 
-        return res.status(200).json({message:"Sikeresen hozzáadva a kedvencekhez"});
- 
-    } catch (error) {
-        console.log(error);
-        return res.status(500).json({ message: "Szerver hiba", error: error.message });
-    }
- }
-
-
- export {getLikes,postLikes,deleteLike,getallLikes,deleteAllLike}
+export { getLikes, postLikes, deleteLike, getallLikes, deleteAllLike };

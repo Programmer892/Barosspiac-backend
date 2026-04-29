@@ -7,7 +7,7 @@ import { error, log } from "console"
 
 dotenv.config()
 
-
+//REgister a new user
 async function userRegister(req, res) {
     const { email, psw, fullname, userClass } = req.body
 
@@ -46,7 +46,7 @@ async function userRegister(req, res) {
 
 
 
-
+//Get all informaion by user_id
 async function userallInformation(req, res) {
     const { user_id } = req.params
 
@@ -61,7 +61,7 @@ async function userallInformation(req, res) {
     }
 }
 
-
+//Handle user login /JWT/
 async function userLogin(req, res) {
     const { email, psw } = req.body;
     console.log(email, psw);
@@ -95,11 +95,14 @@ async function userLogin(req, res) {
     }
 }
 
+//Handle the logout action
 async function logout(req, res) {
 
     return res.json({ message: "Sikeres kijelentkezés" });
 };
 
+
+//Delete a user profile - password is needed
 async function userDelete(req, res) {
     const user_id = req.user.user_id;
     const { psw } = req.query
@@ -129,6 +132,8 @@ async function userDelete(req, res) {
 
 }
 
+
+//Get user statistics - active products, sold products, likes 
 const getUser = async (req, res) => {
     const user_id = req.user.user_id
     console.log(user_id);
@@ -144,6 +149,8 @@ const getUser = async (req, res) => {
     }
 }
 
+
+//Get all user with pagination used by the admins
 const getAllUser = async (req, res) => {
     const page = Number(req.query.page) || 1
     const limit = 10
@@ -170,7 +177,7 @@ const getAllUser = async (req, res) => {
     }
 }
 
-
+//Edit the user information
 const updateUser = async (req, res) => {
     const user_id = req.user.user_id;
     const { fullname, userClass } = req.body;
@@ -200,6 +207,8 @@ const updateUser = async (req, res) => {
     }
 };
 
+
+//Edit the password by user
 const updatePassword = async (req, res) => {
 
     const user_id = req.user.user_id
@@ -225,7 +234,7 @@ const updatePassword = async (req, res) => {
     }
 }
 
-
+//Edit the notification settings by user
 const updateNotifications = async (req, res) => {
     const user_id = req.user.user_id;
     const { notify_message, notify_rating, notify_sold } = req.body;
@@ -244,6 +253,8 @@ const updateNotifications = async (req, res) => {
     }
 };
 
+
+//Edit the profile picture by user
 const updatePfp = async (req, res) => {
     const user_id = req.user.user_id;
     try {
@@ -270,6 +281,8 @@ const updatePfp = async (req, res) => {
     }
 }
 
+
+//Delete the profile picture by user
 const deletePfp = async (req, res) => {
     const user_id = req.user.user_id;
     try {
@@ -286,6 +299,7 @@ const deletePfp = async (req, res) => {
 }
 
 
+//Delete user 
 const deleteUser = async (req, res) => {
     const { user_id } = req.params
     try {
@@ -296,6 +310,7 @@ const deleteUser = async (req, res) => {
     }
 }
 
+//Edit user data used by admins
 const updateUserAdmin = async (req, res) => {
     const { user_id } = req.params
     const { fullname, email, userClass, role, verified } = req.body

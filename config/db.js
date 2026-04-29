@@ -3,6 +3,7 @@ import dotenv from "dotenv"
 dotenv.config()
 
 
+//Make the mysql config for the backend from the .env fiel
 const pool = mysql.createPool({
     host: process.env.DB_HOST,
     port: process.env.DB_PORT,

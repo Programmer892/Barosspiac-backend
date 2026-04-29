@@ -1,4 +1,5 @@
 
+//Admin middleware, you need user.role == admin to gain access this routes
 const admin = async (req,res,next) => 
     {
     
